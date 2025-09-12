@@ -2,18 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>NutriDash - Login</title>
+    <title>NutriDash - Register</title>
     <style>
-        /* Global */
         body {
             font-family: "Segoe UI", Tahoma, sans-serif;
             margin: 0;
             padding: 0;
             background: #f8f9fa;
         }
-
-        /* Login Page */
-        body.login-page {
+        body.register-page {
             display: flex;
             justify-content: center;
             align-items: center;
@@ -22,9 +19,7 @@
                         url('/static/images/login.jpg') no-repeat center center;
             background-size: cover;
         }
-
-        /* Login Container */
-        .login-container {
+        .register-container {
             background: white;
             padding: 40px 30px;
             border-radius: 12px;
@@ -32,16 +27,12 @@
             width: 350px;
             text-align: center;
         }
-
-        /* Heading */
-        .login-container h2 {
+        .register-container h2 {
             margin-bottom: 25px;
             color: #28a745;
         }
-
-        /* Input Fields */
-        .login-container input[type="text"],
-        .login-container input[type="password"] {
+        .register-container input[type="text"],
+        .register-container input[type="password"] {
             width: 100%;
             padding: 12px 15px;
             margin: 10px 0;
@@ -50,9 +41,7 @@
             font-size: 1rem;
             box-sizing: border-box;
         }
-
-        /* Login Button */
-        .login-container button {
+        .register-container button {
             width: 100%;
             padding: 12px;
             margin-top: 15px;
@@ -65,52 +54,46 @@
             cursor: pointer;
             transition: background 0.3s ease;
         }
-
-        .login-container button:hover {
+        .register-container button:hover {
             background-color: #218838;
         }
-
-        /* Placeholder Text */
-        .login-container input::placeholder {
+        .register-container input::placeholder {
             color: #999;
         }
-
-        /* Responsive */
         @media (max-width: 400px) {
-            .login-container {
-                width: 90%;
-                padding: 30px 20px;
-            }
+            .register-container { width: 90%; padding: 30px 20px; }
         }
     </style>
 </head>
-<body class="login-page">
-    <div class="login-container">
-        <h2>Login to NutriDash</h2>
-        <form id="loginForm">
+<body class="register-page">
+    <div class="register-container">
+        <h2>Register for NutriDash</h2>
+        <form id="registerForm">
+            <input type="text" id="name" placeholder="Full Name" required>
             <input type="text" id="phone" placeholder="Phone Number" required>
             <input type="password" id="password" placeholder="Password" required>
-            <button type="submit">Login</button>
-            <span>Don't have an account? <a href="{{ url_for('register') }}">Register</a></span>
+            <button type="submit">Register</button>
         </form>
+        <p>Already have an account? <a href="/login">Login here</a></p>
     </div>
 
     <script>
-        document.getElementById("loginForm").addEventListener("submit", async e => {
+        document.getElementById("registerForm").addEventListener("submit", async e => {
             e.preventDefault();
-            const res = await fetch("/login", {
+            const res = await fetch("/register", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({
+                    name: document.getElementById("name").value,
                     phone: document.getElementById("phone").value,
                     password: document.getElementById("password").value
                 })
             });
             const data = await res.json();
             if (data.success) {
-                window.location.href = "/dashboard";  // redirect on successful login
+                window.location.href = "/dashboard";  // redirect after registration
             } else {
-                alert(data.message);  // will only trigger if no phone/password entered
+                alert(data.message);
             }
         });
     </script>
