@@ -48,6 +48,8 @@ foods = [
     Food("Eggs (Boiled)", "healthy", 78, 6, 5, 1, "Excellent protein-rich food with healthy fats.")
 ]
 
+users = {}
+
 # ---------------- Routes ----------------
 @app.route("/")
 def home():
@@ -69,6 +71,28 @@ def login():
         return jsonify({"success": True})
     
     return jsonify({"success": False, "message": "Please enter phone number and password"})
+
+# Registration page
+@app.route("/register", methods=["GET"])
+def register_page():
+    return render_template("register.html")
+
+@app.route("/register", methods=["POST"])
+def register():
+    data = request.get_json()
+    name = data.get("name")
+    phone = data.get("phone")
+    password = data.get("password")
+
+    if not (name and phone and password):
+        return jsonify({"success": False, "message": "All fields are required"})
+
+    if phone in users:
+        return jsonify({"success": False, "message": "Phone number already registered"})
+
+    users[phone] = {"name": name, "password": password}
+    session["user"] = phone
+    return jsonify({"success": True})
 
 @app.route("/dashboard")
 def dashboard():
