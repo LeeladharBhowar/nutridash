@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NutriDash - Tracker</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { background: hwb(208 59% 4%); font-family: "Segoe UI", Tahoma, sans-serif; margin: 0; display: flex; transition: all 0.3s ease;}
+    .sidebar {
+      width: 230px; height: 100vh; position: fixed; left: 0; top: 0;
+      background: linear-gradient(180deg, #2c3e50, #34495e); color: white; padding-top: 20px; box-shadow: 3px 0 15px rgba(0,0,0,0.1);
+    }
+    .sidebar h3 { text-align: center; margin-bottom: 30px; font-size: 22px; letter-spacing: 1px;}
+    .sidebar ul { list-style: none; padding: 0; }
+    .sidebar ul li { margin: 15px 0; }
+    .sidebar ul li a {
+      color: white; text-decoration: none; font-size: 16px; display: flex;
+      align-items: center; padding: 10px 20px; transition: all 0.3s ease; border-radius: 8px;
+    }
+    .sidebar ul li a i { margin-right: 10px; }
+    .sidebar ul li a:hover, .sidebar ul li a.active { background: #1abc9c; box-shadow: 0 2px 8px rgba(0,0,0,0.2);}
+    .sidebar .logout { margin-top: 30px; text-align: center; display: block; color: #f8d7da; font-weight: bold;}
+
+    .content { margin-left: 230px; padding: 30px; flex: 1; transition: margin-left 0.3s ease;}
+    .search-input, .filter-select { width: 220px; display: inline-block; margin-right: 10px; margin-bottom: 20px; }
+    table { margin-bottom: 40px; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1);}
+    th, td { font-size: 14px; text-align: center; vertical-align: middle; }
+    h4.category-header { margin-top: 40px; font-weight: 600; color: #34495e; }
+    .btn-calculate { transition: all 0.3s ease; }
+    .btn-calculate:hover { transform: scale(1.05); }
+
+    #nutritionResult { background: url('result.jpg') center/cover no-repeat; padding:20px; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.05); color:#000100; }
+    #nutritionResult ul { list-style: none; padding-left: 0; }
+    #nutritionResult li { margin-bottom: 6px; font-weight: 500; }
+
+    #nutritionChart {
+  margin-top: 30px;
+  background: url('/static/images/bar.jpg') no-repeat center center;
+  background-size: cover; /* Make it cover the entire canvas */
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+
+    @media (max-width: 768px) {
+      .sidebar { width: 100%; height: auto; position: relative; }
+      .content { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <h3><i class="fas fa-leaf"></i> NutriDash</h3>
+  <ul>
+    <li><a href="/dashboard"><i class="fas fa-home"></i> Dashboard</a></li>
+    <li><a href="/food-analysis"><i class="fas fa-apple-alt"></i> Food Analysis</a></li>
+    <li><a href="/reports"><i class="fas fa-chart-bar"></i> Reports</a></li>
+    <li><a href="/settings"><i class="fas fa-cog"></i> Settings</a></li>
+    <li><a href="/tracker" class="active"><i class="fas fa-utensils"></i> Tracker</a></li>
+    <li><a href="/logout" class="logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+  </ul>
+</div>
+
+<div class="content">
+  <h2>🍽 Food Tracker</h2>
+
+  <!-- Search & Filter -->
+  <input type="text" id="searchName" class="form-control search-input" placeholder="Search food by name..." onkeyup="filterFoods()">
+  <select id="filterType" class="form-select filter-select" onchange="filterFoods()">
+    <option value="">All Categories</option>
+    <option value="staple">Staple Foods</option>
+    <option value="pulses">Pulses & Legumes</option>
+    <option value="vegetables">Vegetables</option>
+    <option value="fruits">Fruits</option>
+    <option value="dairy">Dairy & Protein</option>
+    <option value="snacks">Snacks & Junk</option>
+    <option value="drinks">Drinks & Beverages</option>
+  </select>
+
+  <!-- Nutrition Calculate Button -->
+  <button class="btn btn-success mb-3 btn-calculate" onclick="calculateNutrition()">Calculate Nutrition</button>
+  <div id="nutritionResult" class="mt-3"></div>
+
+  <!-- Chart -->
+  <canvas id="nutritionChart" width="200" height="50"></canvas>
+
+  <div id="foodTables">
+        <!-- 1️⃣ Staple Foods -->
+<h4 class="category-header" data-type="staple">1️⃣ Staple Foods (Carb Base)</h4>
+<div class="table-responsive">
+  <table class="table table-bordered table-striped food-row" data-type="staple">
+    <thead class="table-dark">
+      <tr>
+        <th>Select</th><th>Food</th><th>Calories</th><th>Protein (g)</th><th>Carbs (g)</th>
+        <th>Fat (g)</th><th>Sugar (g)</th><th>Fiber (g)</th><th>Key Nutrients</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Chapati (1, 40g flour)</td><td class="calories">120</td><td class="protein">3</td><td class="carbs">25</td><td class="fat">0.4</td><td class="sugar">0.2</td><td class="fiber">3</td><td>Iron, B vitamins</td></tr>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Rice (1 cup cooked)</td><td class="calories">200</td><td class="protein">4</td><td class="carbs">45</td><td class="fat">0.4</td><td class="sugar">0.1</td><td class="fiber">0.6</td><td>Manganese, B1</td></tr>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Brown Rice (1 cup)</td><td class="calories">215</td><td class="protein">5</td><td class="carbs">45</td><td class="fat">1.8</td><td class="sugar">0.7</td><td class="fiber">3.5</td><td>Magnesium, Fiber</td></tr>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Paratha (1, with oil)</td><td class="calories">220</td><td class="protein">4</td><td class="carbs">36</td><td class="fat">8</td><td class="sugar">1.5</td><td class="fiber">3</td><td>Iron, B vitamins</td></tr>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Poha (1 cup cooked)</td><td class="calories">180</td><td class="protein">4</td><td class="carbs">30</td><td class="fat">5</td><td class="sugar">2</td><td class="fiber">2</td><td>Iron, Vitamin C</td></tr>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Upma (1 cup)</td><td class="calories">200</td><td class="protein">6</td><td class="carbs">32</td><td class="fat">6</td><td class="sugar">2</td><td class="fiber">3</td><td>Magnesium, B vitamins</td></tr>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Idli (2 pcs)</td><td class="calories">150</td><td class="protein">4</td><td class="carbs">30</td><td class="fat">1</td><td class="sugar">0.5</td><td class="fiber">2</td><td>Fermented probiotics</td></tr>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Dosa (1 medium)</td><td class="calories">170</td><td class="protein">3.5</td><td class="carbs">35</td><td class="fat">2</td><td class="sugar">0.5</td><td class="fiber">2</td><td>Iron, Vitamin B</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 2️⃣ Pulses & Legumes -->
+<h4 class="category-header" data-type="pulses">2️⃣ Pulses & Legumes (Protein + Fiber)</h4>
+<div class="table-responsive">
+  <table class="table table-bordered table-striped food-row" data-type="pulses">
+    <thead class="table-dark">
+      <tr>
+        <th>Select</th><th>Food</th><th>Calories</th><th>Protein (g)</th><th>Carbs (g)</th>
+        <th>Fat (g)</th><th>Sugar (g)</th><th>Fiber (g)</th><th>Key Nutrients</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Dal (1 cup cooked, 150g)</td><td class="calories">180</td><td class="protein">12</td><td class="carbs">28</td><td class="fat">3</td><td class="sugar">1</td><td class="fiber">7</td><td>Folate, Potassium</td></tr>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Chana (100g cooked)</td><td class="calories">160</td><td class="protein">9</td><td class="carbs">27</td><td class="fat">3</td><td class="sugar">4</td><td class="fiber">8</td><td>Iron, Magnesium</td></tr>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Rajma (100g cooked)</td><td class="calories">140</td><td class="protein">9</td><td class="carbs">23</td><td class="fat">0.5</td><td class="sugar">1</td><td class="fiber">6</td><td>Folate, Iron</td></tr>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Soybean (100g boiled)</td><td class="calories">170</td><td class="protein">16</td><td class="carbs">15</td><td class="fat">9</td><td class="sugar">3</td><td class="fiber">6</td><td>Isoflavones, Protein</td></tr>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Green Moong (100g cooked)</td><td class="calories">105</td><td class="protein">7</td><td class="carbs">19</td><td class="fat">0.4</td><td class="sugar">2</td><td class="fiber">7</td><td>Fiber, Folate</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 3️⃣ Vegetables -->
+<h4 class="category-header" data-type="vegetables">3️⃣ Vegetables (Fiber + Micronutrients)</h4>
+<div class="table-responsive">
+  <table class="table table-bordered table-striped food-row" data-type="vegetables">
+    <thead class="table-dark">
+      <tr>
+        <th>Select</th><th>Food</th><th>Calories</th><th>Protein (g)</th><th>Carbs (g)</th>
+        <th>Fat (g)</th><th>Sugar (g)</th><th>Fiber (g)</th><th>Key Nutrients</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Spinach (Palak)</td><td class="calories">40</td><td class="protein">5</td><td class="carbs">7</td><td class="fat">0.5</td><td class="sugar">1</td><td class="fiber">4</td><td>Iron, Vitamin K</td></tr>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Ladyfinger (Bhindi)</td><td class="calories">33</td><td class="protein">2</td><td class="carbs">7</td><td class="fat">0.2</td><td class="sugar">1.5</td><td class="fiber">3</td><td>Folate, Vitamin C</td></tr>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Brinjal (Eggplant)</td><td class="calories">35</td><td class="protein">1</td><td class="carbs">8</td><td class="fat">0.2</td><td class="sugar">3</td><td class="fiber">2.5</td><td>Antioxidants</td></tr>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Carrot</td><td class="calories">25</td><td class="protein">0.5</td><td class="carbs">6</td><td class="fat">0.1</td><td class="sugar">3</td><td class="fiber">2</td><td>Beta-carotene, Vitamin A</td></tr>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Tomato</td><td class="calories">22</td><td class="protein">1</td><td class="carbs">5</td><td class="fat">0.2</td><td class="sugar">3</td><td class="fiber">1.5</td><td>Lycopene, Vitamin C</td></tr>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Potato (boiled, medium)</td><td class="calories">130</td><td class="protein">3</td><td class="carbs">30</td><td class="fat">0.2</td><td class="sugar">1.5</td><td class="fiber">3</td><td>Potassium, Vitamin C</td></tr>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Onion (100g)</td><td class="calories">40</td><td class="protein">1.1</td><td class="carbs">9</td><td class="fat">0.1</td><td class="sugar">4.7</td><td class="fiber">1.5</td><td>Antioxidants</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 4️⃣ Fruits -->
+<h4 class="category-header" data-type="fruits">4️⃣ Fruits (Natural Sugars + Vitamins)</h4>
+<div class="table-responsive">
+  <table class="table table-bordered table-striped food-row" data-type="fruits">
+    <thead class="table-dark">
+      <tr>
+        <th>Select</th><th>Food</th><th>Calories</th><th>Protein (g)</th><th>Carbs (g)</th>
+        <th>Fat (g)</th><th>Sugar (g)</th><th>Fiber (g)</th><th>Key Nutrients</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Banana</td><td class="calories">105</td><td class="protein">1.3</td><td class="carbs">27</td><td class="fat">0.3</td><td class="sugar">14</td><td class="fiber">3</td><td>Potassium, B6</td></tr>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Apple</td><td class="calories">95</td><td class="protein">0.5</td><td class="carbs">25</td><td class="fat">0.3</td><td class="sugar">19</td><td class="fiber">4</td><td>Vitamin C, Antioxidants</td></tr>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Orange</td><td class="calories">62</td><td class="protein">1.2</td><td class="carbs">15</td><td class="fat">0.2</td><td class="sugar">12</td><td class="fiber">3</td><td>Vitamin C, Folate</td></tr>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Mango</td><td class="calories">150</td><td class="protein">1</td><td class="carbs">38</td><td class="fat">0.5</td><td class="sugar">32</td><td class="fiber">3</td><td>Vitamin A, C</td></tr>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Grapes (1 cup)</td><td class="calories">100</td><td class="protein">1</td><td class="carbs">27</td><td class="fat">0.3</td><td class="sugar">23</td><td class="fiber">1</td><td>Antioxidants</td></tr>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Watermelon (1 cup)</td><td class="calories">46</td><td class="protein">1</td><td class="carbs">12</td><td class="fat">0.2</td><td class="sugar">9</td><td class="fiber">0.5</td><td>Hydration, Vitamin C</td></tr>
+      <tr><td><input type="checkbox" class="food-select"></td><td>Papaya (1 cup)</td><td class="calories">60</td><td class="protein">1</td><td class="carbs">16</td><td class="fat">0.3</td><td class="sugar">9</td><td class="fiber">3</td><td>Vitamin A, C</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 5️⃣ Dairy & Protein -->
+<h4 class="category-header" data-type="dairy">5️⃣ Dairy & Protein Sources</h4>
+<div class="table-responsive">
+  <table class="table table-bordered table-striped food-row" data-type="dairy">
+    <thead class="table-dark">
+      <tr>
+        <th>Select</th><th>Food</th><th>Calories</th><th>Protein (g)</th><th>Carbs (g)</th>
+        <th>Fat (g)</th><th>Sugar (g)</th><th>Fiber (g)</th><th>Key Nutrients</th>
+      </tr>
+    </thead>
+    <tbody>
+    <tr><td><input type="checkbox" class="food-select"></td><td>Milk (1 cup)</td><td class="calories">150</td><td class="protein">8</td><td class="carbs">12</td><td class="fat">8</td><td class="sugar">12</td><td class="fiber">0</td><td>Calcium, B12</td></tr>
+    <tr><td><input type="checkbox" class="food-select"></td><td>Curd (100g)</td><td class="calories">98</td><td class="protein">11</td><td class="carbs">4</td><td class="fat">4</td><td class="sugar">3</td><td class="fiber">0</td><td>Probiotics, Calcium</td></tr>
+    <tr><td><input type="checkbox" class="food-select"></td><td>Paneer (100g)</td><td class="calories">
+    <tr><td><input type="checkbox" class="food-select"></td><td>Paneer (100g)</td><td class="calories">265</td><td class="protein">18</td><td class="carbs">6</td><td class="fat">20</td><td class="sugar">1.2</td><td class="fiber">0</td><td>Calcium, Protein</td></tr>
+    <tr><td><input type="checkbox" class="food-select"></td><td>Egg (1 large)</td><td class="calories">70</td><td class="protein">6</td><td class="carbs">0.5</td><td class="fat">5</td><td class="sugar">0</td><td class="fiber">0</td><td>Protein, Vitamin D</td></tr>
+    <tr><td><input type="checkbox" class="food-select"></td><td>Chicken Breast (100g)</td><td class="calories">165</td><td class="protein">31</td><td class="carbs">0</td><td class="fat">3.6</td><td class="sugar">0</td><td class="fiber">0</td><td>Protein, Niacin</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- 6️⃣ Snacks & Junk -->
+<h4 class="category-header" data-type="snacks">6️⃣ Snacks & Junk</h4>
+<div class="table-responsive">
+<table class="table table-bordered table-striped food-row" data-type="snacks">
+<thead class="table-dark">
+<tr>
+<th>Select</th><th>Food</th><th>Calories</th><th>Protein (g)</th><th>Carbs (g)</th>
+<th>Fat (g)</th><th>Sugar (g)</th><th>Fiber (g)</th><th>Key Nutrients</th>
+</tr>
+</thead>
+<tbody>
+<tr><td><input type="checkbox" class="food-select"></td><td>Chips (50g)</td><td class="calories">270</td><td class="protein">3</td><td class="carbs">35</td><td class="fat">15</td><td class="sugar">0.5</td><td class="fiber">2</td><td>Sodium, Fat</td></tr>
+<tr><td><input type="checkbox" class="food-select"></td><td>Biscuits (2 pcs)</td><td class="calories">150</td><td class="protein">2</td><td class="carbs">20</td><td class="fat">7</td><td class="sugar">7</td><td class="fiber">1</td><td>Carbs, Fat</td></tr>
+<tr><td><input type="checkbox" class="food-select"></td><td>Chocolate (20g)</td><td class="calories">100</td><td class="protein">1</td><td class="carbs">12</td><td class="fat">6</td><td class="sugar">10</td><td class="fiber">1</td><td>Iron, Sugar</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- 7️⃣ Drinks -->
+<h4 class="category-header" data-type="drinks">7️⃣ Drinks & Beverages</h4>
+<div class="table-responsive">
+<table class="table table-bordered table-striped food-row" data-type="drinks">
+<thead class="table-dark">
+<tr>
+<th>Select</th><th>Food</th><th>Calories</th><th>Protein (g)</th><th>Carbs (g)</th>
+<th>Fat (g)</th><th>Sugar (g)</th><th>Fiber (g)</th><th>Key Nutrients</th>
+</tr>
+</thead>
+<tbody>
+<tr><td><input type="checkbox" class="food-select"></td><td>Milk (1 cup)</td><td class="calories">150</td><td class="protein">8</td><td class="carbs">12</td><td class="fat">8</td><td class="sugar">12</td><td class="fiber">0</td><td>Calcium, B12</td></tr>
+<tr><td><input type="checkbox" class="food-select"></td><td>Tea (1 cup)</td><td class="calories">30</td><td class="protein">0</td><td class="carbs">5</td><td class="fat">0.1</td><td class="sugar">5</td><td class="fiber">0</td><td>Caffeine</td></tr>
+<tr><td><input type="checkbox" class="food-select"></td><td>Coffee (1 cup)</td><td class="calories">2</td><td class="protein">0</td><td class="carbs">0</td><td class="fat">0</td><td class="sugar">0</td><td class="fiber">0</td><td>Caffeine</td></tr>
+<tr><td><input type="checkbox" class="food-select"></td><td>Juice (Orange, 1 cup)</td><td class="calories">110</td><td class="protein">2</td><td class="carbs">26</td><td class="fat">0.5</td><td class="sugar">22</td><td class="fiber">0.5</td><td>Vitamin C</td></tr>
+</tbody>
+</table>
+</div>
+
+</div>
+
+<script>
+// Filter function
+function filterFoods() {
+  const searchValue = document.getElementById('searchName').value.toLowerCase();
+  const filterType = document.getElementById('filterType').value;
+  document.querySelectorAll('.food-row').forEach(table => {
+    const type = table.getAttribute('data-type');
+    table.style.display = (!filterType || type === filterType) ? '' : 'none';
+    table.querySelectorAll('tbody tr').forEach(row => {
+      const name = row.cells[1].textContent.toLowerCase();
+      row.style.display = name.includes(searchValue) ? '' : 'none';
+    });
+  });
+}
+
+// Nutrition calculation + chart
+let chartInstance;
+function calculateNutrition() {
+  let totals = { calories:0, protein:0, carbs:0, fat:0, sugar:0, fiber:0 };
+  document.querySelectorAll('.food-select:checked').forEach(cb => {
+    const row = cb.closest('tr');
+    totals.calories += parseFloat(row.querySelector('.calories').textContent);
+    totals.protein += parseFloat(row.querySelector('.protein').textContent);
+    totals.carbs += parseFloat(row.querySelector('.carbs').textContent);
+    totals.fat += parseFloat(row.querySelector('.fat').textContent);
+    totals.sugar += parseFloat(row.querySelector('.sugar').textContent);
+    totals.fiber += parseFloat(row.querySelector('.fiber').textContent);
+  });
+  document.getElementById('nutritionResult').innerHTML = `
+    <h5>Total Nutrition:</h5>
+    <ul>
+      <li>Calories: ${totals.calories}</li>
+      <li>Protein: ${totals.protein} g</li>
+      <li>Carbs: ${totals.carbs} g</li>
+      <li>Fat: ${totals.fat} g</li>
+      <li>Sugar: ${totals.sugar} g</li>
+      <li>Fiber: ${totals.fiber} g</li>
+    </ul>`;
+
+  // Chart.js update
+  const ctx = document.getElementById('nutritionChart').getContext('2d');
+  if(chartInstance) chartInstance.destroy();
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Calories', 'Protein', 'Carbs', 'Fat', 'Sugar', 'Fiber'],
+      datasets: [{
+        label: 'Nutrition (g)',
+        data: [totals.calories, totals.protein, totals.carbs, totals.fat, totals.sugar, totals.fiber],
+        backgroundColor: ['#1abc9c','#3498db','#f39c12','#e74c3c','#9b59b6','#2ecc71']
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+
+  // Save meal to localStorage
+  let savedMeals = JSON.parse(localStorage.getItem('savedMeals') || '[]');
+  savedMeals.push({ timestamp: new Date().toLocaleString(), nutrition: totals });
+  localStorage.setItem('savedMeals', JSON.stringify(savedMeals));
+}
+</script>
+
+</body>
+</html>

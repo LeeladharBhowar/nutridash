@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NutriDash - Reports</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: hwb(216 60% 6%);
+      margin: 0;
+      display: flex;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 230px;
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      background: linear-gradient(180deg, #2c3e50, #34495e);
+      color: white;
+      padding-top: 20px;
+    }
+
+    .sidebar h3 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 22px;
+    }
+
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .sidebar ul li {
+      margin: 15px 0;
+    }
+
+    .sidebar ul li a {
+      color: white;
+      text-decoration: none;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      padding: 10px 20px;
+      transition: background 0.3s;
+      border-radius: 8px;
+    }
+
+    .sidebar ul li a i {
+      margin-right: 10px;
+    }
+
+    .sidebar ul li a:hover,
+    .sidebar ul li a.active {
+      background: #1abc9c;
+    }
+
+    .sidebar .logout {
+      margin-top: 30px;
+      text-align: center;
+      display: block;
+      color: #f8d7da;
+    }
+
+    /* Content */
+    .content {
+      margin-left: 230px;
+      padding: 30px;
+      flex: 1;
+    }
+
+    .card { border-radius: 12px; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h3><i class="fas fa-leaf"></i> NutriDash</h3>
+    <ul>
+      <li><a href="/dashboard" class="{% if request.path == '/dashboard' %}active{% endif %}"><i class="fas fa-home"></i> Dashboard</a></li>
+      <li><a href="/food-analysis" class="{% if request.path == '/food-analysis' %}active{% endif %}"><i class="fas fa-apple-alt"></i> Food Analysis</a></li>
+      <li><a href="/reports" class="{% if request.path == '/reports' %}active{% endif %}"><i class="fas fa-chart-bar"></i> Reports</a></li>
+      <li><a href="/settings" class="{% if request.path == '/settings' %}active{% endif %}"><i class="fas fa-cog"></i> Settings</a></li>
+      <li><a href="/logout" class="logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+    </ul>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+    <h2>📊 Reports for {{ username }}</h2>
+
+    <div class="row mt-4">
+      <div class="col-md-6">
+        <div class="card p-4">
+          <h5>Total Foods</h5>
+          <h3>{{ foods|length }}</h3>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card p-4">
+          <h5>Healthy vs Junk</h5>
+          <h3>
+            Healthy: {{ foods|selectattr("type","equalto","healthy")|list|length }} |
+            Junk: {{ foods|selectattr("type","equalto","junk")|list|length }}
+          </h3>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mt-4">
+      <div class="col-md-12">
+        <div class="card p-4">
+          <h5>Calories by Type</h5>
+          <canvas id="caloriesChart" height="150"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const caloriesData = {
+    labels: ['Healthy', 'Junk', 'Dairy', 'Frozen/Packed'],
+    datasets: [{
+      label: 'Total Calories',
+      data: [
+        {{ foods|selectattr("type","equalto","healthy")|map(attribute="calories")|sum | tojson }},
+        {{ foods|selectattr("type","equalto","junk")|map(attribute="calories")|sum | tojson }},
+        {{ foods|selectattr("type","equalto","dairy")|map(attribute="calories")|sum | tojson }},
+        {{ foods|selectattr("type","equalto","frozen")|map(attribute="calories")|sum | tojson }}
+      ],
+      backgroundColor: ['#27ae60', '#e74c3c', '#f39c12', '#3498db']
+    }]
+  };
+
+  const config = {
+    type: 'bar',
+    data: caloriesData,
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  };
+
+  new Chart(document.getElementById('caloriesChart'), config);
+</script>
+</body>
+</html>

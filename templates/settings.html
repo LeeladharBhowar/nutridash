@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NutriDash - Settings</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      display: flex;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 230px;
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      background: linear-gradient(180deg, #2c3e50, #34495e);
+      color: white;
+      padding-top: 20px;
+    }
+
+    .sidebar h3 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 22px;
+    }
+
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .sidebar ul li {
+      margin: 15px 0;
+    }
+
+    .sidebar ul li a {
+      color: white;
+      text-decoration: none;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      padding: 10px 20px;
+      transition: background 0.3s;
+      border-radius: 8px;
+    }
+
+    .sidebar ul li a i {
+      margin-right: 10px;
+    }
+
+    .sidebar ul li a:hover,
+    .sidebar ul li a.active {
+      background: #1abc9c;
+    }
+
+    .sidebar .logout {
+      margin-top: 30px;
+      text-align: center;
+      display: block;
+      color: #f8d7da;
+    }
+
+    /* Content */
+    .content {
+      margin-left: 230px;
+      padding: 30px;
+      flex: 1;
+    }
+
+    .card { 
+      border-radius: 12px; 
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h3><i class="fas fa-leaf"></i> NutriDash</h3>
+    <ul>
+      <li><a href="/dashboard" class="{% if request.path == '/dashboard' %}active{% endif %}"><i class="fas fa-home"></i> Dashboard</a></li>
+      <li><a href="/food-analysis" class="{% if request.path == '/food-analysis' %}active{% endif %}"><i class="fas fa-apple-alt"></i> Food Analysis</a></li>
+      <li><a href="/reports" class="{% if request.path == '/reports' %}active{% endif %}"><i class="fas fa-chart-bar"></i> Reports</a></li>
+      <li><a href="/settings" class="{% if request.path == '/settings' %}active{% endif %}"><i class="fas fa-cog"></i> Settings</a></li>
+      <li><a href="/logout" class="logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+    </ul>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+    <h2>⚙️ Settings for {{ username }}</h2>
+
+    <!-- Password Section -->
+    <div class="card p-4">
+      <h4>🔑 Change Password</h4>
+      <div class="mb-3">
+        <label class="form-label">Current Password</label>
+        <input type="password" id="currentPassword" class="form-control" placeholder="Enter current password">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">New Password</label>
+        <input type="password" id="newPassword" class="form-control" placeholder="Enter new password">
+      </div>
+      <button class="btn btn-primary" onclick="updatePassword()">Update Password</button>
+      <p id="passwordMsg" class="mt-2 fw-bold"></p>
+    </div>
+
+    <!-- Theme Section -->
+    <div class="card p-4">
+      <h4>🎨 Theme</h4>
+      <button class="btn btn-dark" onclick="toggleTheme()" id="themeBtn">Switch Theme</button>
+    </div>
+  </div>
+
+  <script>
+    async function updatePassword() {
+      const current = document.getElementById("currentPassword").value;
+      const newPass = document.getElementById("newPassword").value;
+      let res = await fetch("/update-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ current: current, new: newPass })
+      });
+      let data = await res.json();
+      let msg = document.getElementById("passwordMsg");
+      msg.innerText = data.message;
+      msg.style.color = data.success ? "green" : "red";
+    }
+
+    async function toggleTheme() {
+      let currentTheme = document.body.classList.contains("dark") ? "dark" : "light";
+      let newTheme = currentTheme === "light" ? "dark" : "light";
+      document.body.classList.toggle("dark");
+      document.getElementById("themeBtn").innerText = newTheme === "light" ? "Switch to Dark" : "Switch to Light";
+
+      await fetch("/update-theme", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ theme: newTheme })
+      });
+    }
+
+    // Apply theme on load
+    window.onload = async () => {
+      let res = await fetch("/get-theme");
+      let data = await res.json();
+      if (data.theme === "dark") {
+        document.body.classList.add("dark");
+        document.getElementById("themeBtn").innerText = "Switch to Light";
+      } else {
+        document.getElementById("themeBtn").innerText = "Switch to Dark";
+      }
+    }
+  </script>
+</body>
+</html>

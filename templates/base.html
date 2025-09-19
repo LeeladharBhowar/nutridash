@@ -1,23 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>NutriDash</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+  <meta charset="UTF-8">
+  <title>{% block title %}NutriDash{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 0;
+      display: flex;
+    }
+    /* Sidebar */
+    .sidebar {
+      width: 220px;
+      background: #2c3e50;
+      color: #fff;
+      height: 100vh;
+      padding: 20px 0;
+      position: fixed;
+      top: 0;
+      left: 0;
+    }
+    .sidebar h3 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 20px;
+      color: #f1c40f;
+    }
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+    }
+    .sidebar ul li {
+      margin: 15px 0;
+    }
+    .sidebar ul li a {
+      text-decoration: none;
+      color: #ecf0f1;
+      padding: 10px 20px;
+      display: block;
+      transition: background 0.3s;
+    }
+    .sidebar ul li a:hover {
+      background: #34495e;
+    }
+    .sidebar ul li a i {
+      margin-right: 10px;
+    }
+    /* Main content */
+    .main-content {
+      margin-left: 220px;
+      padding: 30px;
+      flex: 1;
+    }
+  </style>
 </head>
 <body>
-<header>
-    <h1>🍎 NutriDash</h1>
-    {% if session.get('user') %}
-        <nav>
-            <a href="{{ url_for('dashboard') }}">Dashboard</a>
-            <a href="{{ url_for('logout') }}">Logout</a>
-        </nav>
-    {% endif %}
-</header>
-<main>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h3>NutriDash</h3>
+    <ul>
+      <li><a href="/dashboard"><i class="fas fa-home"></i> Dashboard</a></li>
+      <li><a href="/food-analysis"><i class="fas fa-apple-alt"></i> Food Analysis</a></li>
+      <li><a href="/reports"><i class="fas fa-chart-bar"></i> Reports</a></li>
+      <li><a href="/settings"><i class="fas fa-cog"></i> Settings</a></li>
+      <li><a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+    </ul>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
     {% block content %}{% endblock %}
-</main>
+  </div>
 </body>
 </html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Food Label Analysis</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: hwb(210 53% 7%);
+      margin: 0;
+      display: flex;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 230px;
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      background: linear-gradient(180deg, #2c3e50, #34495e);
+      color: white;
+      padding-top: 20px;
+    }
+
+    .sidebar h3 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 22px;
+    }
+
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .sidebar ul li {
+      margin: 15px 0;
+    }
+
+    .sidebar ul li a {
+      color: white;
+      text-decoration: none;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      padding: 10px 20px;
+      transition: background 0.3s;
+      border-radius: 8px;
+    }
+
+    .sidebar ul li a i {
+      margin-right: 10px;
+    }
+
+    .sidebar ul li a:hover,
+    .sidebar ul li a.active {
+      background: #1abc9c;
+    }
+
+    .sidebar .logout {
+      margin-top: 30px;
+      text-align: center;
+      display: block;
+      color: #f8d7da;
+    }
+
+    /* Content */
+    .content {
+      margin-left: 230px;
+      padding: 30px;
+      flex: 1;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: #fff;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .upload-box {
+      border: 2px dashed #007bff;
+      padding: 30px;
+      text-align: center;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      background: #f9fcff;
+    }
+
+    .upload-box input[type=file] {
+      display: none;
+    }
+
+    .upload-btn {
+      background: #007bff;
+      color: #fff;
+      padding: 12px 25px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      display: inline-block;
+      border: none;
+    }
+
+    .upload-btn:hover {
+      background: #0056b3;
+    }
+
+    .result {
+      display: none;
+      margin-top: 25px;
+    }
+
+    .card {
+      background: #fafafa;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 15px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+    }
+
+    .badge {
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+
+    .badge.good {
+      background: #28a745;
+      color: #fff;
+    }
+
+    .badge.bad {
+      background: #dc3545;
+      color: #fff;
+    }
+
+    ul {
+      padding-left: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ✅ Sidebar -->
+  <div class="sidebar">
+    <h3><i class="fas fa-leaf"></i> NutriDash</h3>
+    <ul>
+      <li><a href="/dashboard" class="{% if request.path == '/dashboard' %}active{% endif %}"><i class="fas fa-home"></i> Dashboard</a></li>
+      <li><a href="/food-analysis" class="{% if request.path == '/food-analysis' %}active{% endif %}"><i class="fas fa-apple-alt"></i> Food Analysis</a></li>
+      <li><a href="/reports" class="{% if request.path == '/reports' %}active{% endif %}"><i class="fas fa-chart-bar"></i> Reports</a></li>
+      <li><a href="/settings" class="{% if request.path == '/settings' %}active{% endif %}"><i class="fas fa-cog"></i> Settings</a></li>
+      <li><a href="/logout" class="logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+    </ul>
+  </div>
+
+  <!-- ✅ Page Content -->
+  <div class="content">
+    <div class="container">
+      <h2><i class="fas fa-search"></i> Food Label Analysis</h2>
+
+      <!-- Upload Box -->
+      <form id="uploadForm" enctype="multipart/form-data">
+        <div class="upload-box">
+          <label class="upload-btn" for="fileInput">
+            <i class="fas fa-upload"></i> Choose Food Label Image
+          </label>
+          <input id="fileInput" type="file" name="file" accept="image/*" required>
+          <div id="fileName" style="margin-top:10px;color:#555;"></div>
+        </div>
+        <button type="submit" class="upload-btn"><i class="fas fa-magic"></i> Analyze</button>
+      </form>
+
+      <!-- Analysis Result -->
+      <div id="result" class="result">
+        <div class="card">
+          <h3>Verdict: <span id="verdict" class="badge"></span></h3>
+        </div>
+        <div class="card">
+          <h4>Ingredients</h4>
+          <ul id="ingredients"></ul>
+        </div>
+        <div class="card">
+          <h4>Nutrition Facts</h4>
+          <ul id="nutrition"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const uploadForm = document.getElementById("uploadForm");
+    const fileInput = document.getElementById("fileInput");
+    const fileName = document.getElementById("fileName");
+    const resultBox = document.getElementById("result");
+    const verdictEl = document.getElementById("verdict");
+    const ingredientsEl = document.getElementById("ingredients");
+    const nutritionEl = document.getElementById("nutrition");
+
+    // Show selected file name
+    fileInput.addEventListener("change", () => {
+      fileName.textContent = fileInput.files[0]?.name || "";
+    });
+
+    // Handle form submit
+    uploadForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+
+      const res = await fetch("/analyze", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+
+      if (data.error) {
+        alert(data.error);
+        return;
+      }
+
+      // Show verdict
+      verdictEl.textContent = data.verdict;
+      verdictEl.className = "badge " + (data.verdict.toLowerCase() === "good" ? "good" : "bad");
+
+      // Ingredients
+      ingredientsEl.innerHTML = "";
+      data.ingredients.forEach(i => {
+        const li = document.createElement("li");
+        li.textContent = i;
+        ingredientsEl.appendChild(li);
+      });
+
+      // Nutrition
+      nutritionEl.innerHTML = "";
+      for (const [key, value] of Object.entries(data.nutrition)) {
+        const li = document.createElement("li");
+        li.textContent = key + ": " + value;
+        nutritionEl.appendChild(li);
+      }
+
+      resultBox.style.display = "block";
+    });
+  </script>
+</body>
+</html>

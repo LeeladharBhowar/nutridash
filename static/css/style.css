@@ -1,4 +1,4 @@
-/* ---------------- Global ---------------- */
+/* ===================== GLOBAL ===================== */
 body {
     font-family: "Segoe UI", Tahoma, sans-serif;
     margin: 0;
@@ -32,7 +32,141 @@ main {
     text-align: center;
 }
 
-/* ---------------- Labels ---------------- */
+/* ===================== AUTH PAGE ===================== */
+.auth-container {
+    background: white;
+    padding: 40px 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    width: 380px;
+    text-align: center;
+}
+
+.tabs {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #eee;
+}
+
+.tab {
+    flex: 1;
+    padding: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    color: #555;
+    transition: 0.3s;
+}
+
+.tab.active {
+    color: #28a745;
+    border-bottom: 3px solid #28a745;
+}
+
+.auth-container h2 {
+    margin-bottom: 20px;
+    color: #28a745;
+}
+
+.auth-container input {
+    width: 100%;
+    padding: 12px 15px;
+    margin: 10px 0;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+.auth-container button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 15px;
+    border: none;
+    border-radius: 8px;
+    background-color: #28a745;
+    color: white;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.auth-container button:hover {
+    background-color: #218838;
+}
+
+.form {
+    display: none;
+    animation: fade 0.3s ease-in-out;
+}
+
+.form.active {
+    display: block;
+}
+
+@keyframes fade {
+    from { opacity:0; transform:translateY(10px);}
+    to { opacity:1; transform:translateY(0);}
+}
+
+/* ===================== DASHBOARD ===================== */
+.sidebar {
+    height: 100vh;
+    background: #28a745;
+    color: white;
+    padding-top: 30px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 240px;
+}
+
+.sidebar h3 {
+    text-align: center;
+    margin-bottom: 30px;
+    font-weight: bold;
+}
+
+.sidebar a {
+    display: block;
+    padding: 12px 20px;
+    color: white;
+    text-decoration: none;
+    margin: 5px 0;
+    border-radius: 6px;
+    transition: 0.3s;
+}
+
+.sidebar a:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.content {
+    margin-left: 260px;
+    padding: 30px;
+}
+
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: rgba(40,167,69,0.05);
+}
+
+.badge {
+    font-size: 0.9rem;
+    padding: 0.5em 0.7em;
+}
+
+/* ===================== LABELS ===================== */
 .label {
     display: inline-block;
     padding: 10px 25px;
@@ -51,7 +185,7 @@ main {
     background: #e74c3c;
 }
 
-/* ---------------- Food Cards ---------------- */
+/* ===================== FOOD CARDS ===================== */
 .nutrition-container {
     display: flex;
     flex-wrap: wrap;
@@ -71,18 +205,16 @@ main {
     text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
     display: flex;
     flex-direction: column;
-    justify-content: flex-end; /* text at bottom */
+    justify-content: flex-end;
     padding: 15px;
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
-/* Hover effect */
 .food-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 20px rgba(0,0,0,0.3);
 }
 
-/* Card border by type */
 .food-card.healthy {
     border: 3px solid #27ae60;
 }
@@ -91,18 +223,16 @@ main {
     border: 3px solid #e74c3c;
 }
 
-/* Background image */
 .food-card::before {
     content: "";
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
     background-size: cover;
     background-position: center;
-    opacity: 0.9; /* clearer image */
+    opacity: 0.9;
     z-index: 0;
 }
 
-/* Text above image */
 .food-card h3,
 .food-card p {
     position: relative;
@@ -110,33 +240,37 @@ main {
     margin: 5px 0;
 }
 
-/* ---------------- Example Images ---------------- */
+/* ===================== FOOD IMAGES ===================== */
+/* ===================== FOOD IMAGES ===================== */
+
+/* -------- Junk Foods -------- */
 .food-card.burger::before { background-image: url("/static/images/burger.jpg"); }
 .food-card.pizza::before { background-image: url("/static/images/pizza.jpg"); }
-.food-card.french_fries::before { background-image: url("/static/images/fries.jpg"); }
+.food-card.french_fries::before { background-image: url("/static/images/french_fries.jpg"); }
 .food-card.fried_chicken::before { background-image: url("/static/images/fried_chicken.jpg"); }
-.food-card.soft_drink_cola::before { background-image: url("/static/images/cola.jpg"); }
-.food-card.ice_cream::before { background-image: url("/static/images/icecream.jpg"); }
-.food-card.hot_dog::before { background-image: url("/static/images/hotdog.jpg"); }
+.food-card.hot_dog::before { background-image: url("/static/images/hot_dog.jpg"); }
 .food-card.donut::before { background-image: url("/static/images/donut.jpg"); }
-.food-card.nachos::before { background-image: url("/static/images/nachos.jpg"); }
-.food-card.chocolate_bar::before { background-image: url("/static/images/chocolate.jpg"); }
-.food-card.chips::before { background-image: url("/static/images/chips.jpg"); }
-.food-card.cake::before { background-image: url("/static/images/cake.jpg"); }
-.food-card.milkshake::before { background-image: url("/static/images/milkshake.jpg"); }
-.food-card.popcorn_butter::before { background-image: url("/static/images/popcorn.jpg"); }
 
+/* -------- Healthy Foods -------- */
 .food-card.salad::before { background-image: url("/static/images/salad.jpg"); }
 .food-card.grilled_chicken::before { background-image: url("/static/images/grilled_chicken.jpg"); }
 .food-card.apple::before { background-image: url("/static/images/apple.jpg"); }
 .food-card.banana::before { background-image: url("/static/images/banana.jpg"); }
 .food-card.brown_rice::before { background-image: url("/static/images/brown_rice.jpg"); }
 .food-card.oatmeal::before { background-image: url("/static/images/oatmeal.jpg"); }
-.food-card.greek_yogurt::before { background-image: url("/static/images/yogurt.jpg"); }
-.food-card.almonds_10_pcs::before { background-image: url("/static/images/almonds.jpg"); }
-.food-card.carrots::before { background-image: url("/static/images/carrots.jpg"); }
-.food-card.spinach::before { background-image: url("/static/images/spinach.jpg"); }
-.food-card.broccoli::before { background-image: url("/static/images/broccoli.jpg"); }
-.food-card.strawberries::before { background-image: url("/static/images/strawberries.jpg"); }
-.food-card.fish_salmon::before { background-image: url("/static/images/salmon.jpg"); }
-.food-card.eggs_boiled::before { background-image: url("/static/images/eggs.jpg"); }
+
+/* -------- Dairy Products -------- */
+.food-card.greek_yogurt::before { background-image: url("/static/images/greek_yogurt.jpg"); }
+.food-card.milk::before { background-image: url("/static/images/milk.jpg"); }
+.food-card.cheese::before { background-image: url("/static/images/cheese.jpg"); }
+.food-card.paneer::before { background-image: url("/static/images/paneer.jpg"); }
+.food-card.butter::before { background-image: url("/static/images/butter.jpg"); }
+.food-card.curd::before { background-image: url("/static/images/curd.jpg"); }
+
+/* -------- Frozen Foods -------- */
+.food-card.ice_cream::before { background-image: url("/static/images/ice_cream.jpg"); }
+.food-card.milkshake::before { background-image: url("/static/images/milkshake.jpg"); }
+.food-card.soft_drink::before { background-image: url("/static/images/soft_drink.jpg"); }
+.food-card.popcorn::before { background-image: url("/static/images/popcorn.jpg"); }
+.food-card.frozen_pizza::before { background-image: url("/static/images/frozen_pizza.jpg"); }
+.food-card.frozen_fries::before { background-image: url("/static/images/frozen_french_fries.jpg"); }

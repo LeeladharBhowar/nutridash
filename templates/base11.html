@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}NutriDash - Dashboard{% endblock %}
+
+{% block content %}
+  <h2 class="mb-4">Welcome, {{ session['username'] }} 🎉</h2>
+
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="card p-4">
+        <h5 class="card-title">Food Scans</h5>
+        <p class="card-text text-muted">Total scans you performed</p>
+        <h3 class="text-success">12</h3>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card p-4">
+        <h5 class="card-title">Healthy Choices</h5>
+        <p class="card-text text-muted">AI suggested healthy items</p>
+        <h3 class="text-success">8</h3>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card p-4">
+        <h5 class="card-title">Calories Saved</h5>
+        <p class="card-text text-muted">Based on AI recommendations</p>
+        <h3 class="text-success">1,250 kcal</h3>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-5">
+    <h4>Recent Activity</h4>
+    <table class="table table-striped mt-3">
+      <thead class="table-success">
+        <tr>
+          <th>#</th>
+          <th>Food</th>
+          <th>Calories</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>Brown Rice</td>
+          <td>216 kcal</td>
+          <td><span class="badge bg-success">Healthy</span></td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>Chips</td>
+          <td>560 kcal</td>
+          <td><span class="badge bg-danger">Unhealthy</span></td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>Orange Juice</td>
+          <td>110 kcal</td>
+          <td><span class="badge bg-warning">Moderate</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+{% endblock %}
