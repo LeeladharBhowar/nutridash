@@ -2,16 +2,41 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>NutriDash - Settings</title>
+  <title>NutriDash - Advanced Settings</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
   <style>
+    /* NOTE: Added dark theme logic for proper toggle functionality */
+    :root {
+      --bg-color: #f4f6f9;
+      --text-color: #333;
+      --card-bg: #fff;
+      --sidebar-bg: linear-gradient(180deg, #2c3e50, #34495e);
+      --sidebar-hover: #1abc9c;
+      --primary-btn: #007bff;
+      --info-btn: #17a2b8;
+      --success-color: #28a745;
+      --error-color: #dc3545;
+    }
+
+    body.dark {
+      --bg-color: #121212;
+      --text-color: #f1f1f1;
+      --card-bg: #1e1e1e;
+      --sidebar-bg: linear-gradient(180deg, #1e1e1e, #333);
+      --sidebar-hover: #4a4a4a;
+      --primary-btn: #1abc9c;
+      --info-btn: #29b6f6;
+    }
+    
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #f4f6f9;
+      background: var(--bg-color);
       margin: 0;
       display: flex;
+      color: var(--text-color);
+      transition: background 0.3s, color 0.3s;
     }
 
     /* Sidebar */
@@ -21,9 +46,10 @@
       position: fixed;
       left: 0;
       top: 0;
-      background: linear-gradient(180deg, #2c3e50, #34495e);
+      background: var(--sidebar-bg);
       color: white;
       padding-top: 20px;
+      box-shadow: 3px 0 15px rgba(0,0,0,0.1);
     }
 
     .sidebar h3 {
@@ -58,7 +84,7 @@
 
     .sidebar ul li a:hover,
     .sidebar ul li a.active {
-      background: #1abc9c;
+      background: var(--sidebar-hover);
     }
 
     .sidebar .logout {
@@ -74,32 +100,91 @@
       padding: 30px;
       flex: 1;
     }
+    .content h2 {
+      color: var(--text-color);
+      margin-bottom: 25px;
+    }
 
+    /* Card Styling */
     .card { 
+      background-color: var(--card-bg);
+      border: 1px solid #ddd;
       border-radius: 12px; 
       margin-bottom: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      transition: background 0.3s, border-color 0.3s;
     }
+    .card h4 {
+        color: #1abc9c; /* Green color for card headers */
+    }
+    .form-control, .form-select {
+        background-color: var(--bg-color);
+        border-color: #ccc;
+        color: var(--text-color);
+    }
+    body.dark .form-control, body.dark .form-select {
+        background-color: #333;
+        border-color: #555;
+        color: #f1f1f1;
+    }
+    
+    /* Specific button styling for contrast */
+    .btn-info {
+        background-color: var(--info-btn);
+        border-color: var(--info-btn);
+        color: white;
+    }
+    .btn-info:hover {
+        background-color: #0c8091;
+        border-color: #0c8091;
+    }
+
+    /* Message Styling */
+    .alert-success { background-color: var(--success-color); color: white; }
+    .alert-danger { background-color: var(--error-color); color: white; }
   </style>
 </head>
 <body>
 
-  <!-- Sidebar -->
-  <div class="sidebar">
+    <div class="sidebar">
     <h3><i class="fas fa-leaf"></i> NutriDash</h3>
     <ul>
-      <li><a href="/dashboard" class="{% if request.path == '/dashboard' %}active{% endif %}"><i class="fas fa-home"></i> Dashboard</a></li>
-      <li><a href="/food-analysis" class="{% if request.path == '/food-analysis' %}active{% endif %}"><i class="fas fa-apple-alt"></i> Food Analysis</a></li>
-      <li><a href="/reports" class="{% if request.path == '/reports' %}active{% endif %}"><i class="fas fa-chart-bar"></i> Reports</a></li>
-      <li><a href="/settings" class="{% if request.path == '/settings' %}active{% endif %}"><i class="fas fa-cog"></i> Settings</a></li>
+      <li><a href="/dashboard"><i class="fas fa-home"></i> Dashboard</a></li>
+      <li><a href="/food-analysis"><i class="fas fa-apple-alt"></i> Food Analysis</a></li>
+      <li><a href="/reports"><i class="fas fa-chart-bar"></i> Reports</a></li>
+      <li><a href="/settings" class="active"><i class="fas fa-cog"></i> Settings</a></li>
+      <li><a href="/tracker"><i class="fas fa-utensils"></i> Tracker</a></li>
       <li><a href="/logout" class="logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
     </ul>
   </div>
 
-  <!-- Content -->
-  <div class="content">
-    <h2>⚙️ Settings for {{ username }}</h2>
+    <div class="content">
+    <h2>⚙️ Advanced Settings for {{ username }}</h2>
 
-    <!-- Password Section -->
+    <div class="card p-4">
+      <h4>🎯 Body Metrics & Goal (for AI Suggestions)</h4>
+      <p class="text-muted">Set your current weight and primary health goal. This data is used by the AI model to calculate personalized protein needs and health risk warnings in the Tracker.</p>
+      
+      <div class="row">
+          <div class="col-md-6 mb-3">
+              <label for="userWeight" class="form-label">Body Weight (kg)</label>
+              <input type="number" class="form-control" id="userWeight" 
+                     value="{{ current_weight | float if current_weight is not none else 70.0 }}" 
+                     min="1" step="0.1" required>
+          </div>
+          <div class="col-md-6 mb-3">
+              <label for="healthGoal" class="form-label">Primary Health Goal</label>
+              <select class="form-select" id="healthGoal" required>
+                  <option value="lose">Lose Weight</option>
+                  <option value="maintain">Maintain Weight (Current)</option>
+                  <option value="gain">Gain Muscle/Weight</option>
+              </select>
+          </div>
+      </div>
+      
+      <button class="btn btn-info w-100" onclick="updateUserProfile()"><i class="fas fa-save"></i> Save Metrics & Goal</button>
+      <div id="profileMsg" class="mt-3"></div>
+    </div>
     <div class="card p-4">
       <h4>🔑 Change Password</h4>
       <div class="mb-3">
@@ -110,54 +195,135 @@
         <label class="form-label">New Password</label>
         <input type="password" id="newPassword" class="form-control" placeholder="Enter new password">
       </div>
-      <button class="btn btn-primary" onclick="updatePassword()">Update Password</button>
-      <p id="passwordMsg" class="mt-2 fw-bold"></p>
+      <button class="btn btn-primary" onclick="updatePassword()"><i class="fas fa-lock"></i> Update Password</button>
+      <div id="passwordMsg" class="mt-3"></div>
     </div>
 
-    <!-- Theme Section -->
     <div class="card p-4">
-      <h4>🎨 Theme</h4>
+      <h4>🎨 Theme Preference</h4>
       <button class="btn btn-dark" onclick="toggleTheme()" id="themeBtn">Switch Theme</button>
     </div>
   </div>
 
   <script>
+    // Helper function to show alerts
+    function showAlert(msgElement, message, isSuccess) {
+        msgElement.innerHTML = `<div class="alert alert-${isSuccess ? 'success' : 'danger'}">${message}</div>`;
+        setTimeout(() => {
+            msgElement.innerHTML = '';
+        }, 5000);
+    }
+    
+    // 📍 ADVANCED: Update User Profile (Weight & Goal)
+    async function updateUserProfile() {
+        const weightInput = document.getElementById("userWeight");
+        const goalInput = document.getElementById("healthGoal");
+        const weight = parseFloat(weightInput.value);
+        const goal = goalInput.value;
+        const msg = document.getElementById("profileMsg");
+        
+        // Basic validation
+        if (isNaN(weight) || weight <= 0) {
+            showAlert(msg, "❌ Please enter a valid weight.", false);
+            return;
+        }
+
+        try {
+            const res = await fetch("/update-user-profile", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    weight: weight,
+                    goal: goal 
+                })
+            });
+
+            const data = await res.json();
+            showAlert(msg, data.message, data.success);
+            
+        } catch (err) {
+            console.error("Profile update error:", err);
+            showAlert(msg, "❌ Network error. Could not update profile.", false);
+        }
+    }
+    
+    // Existing Update Password Function (Modified to use showAlert)
     async function updatePassword() {
       const current = document.getElementById("currentPassword").value;
       const newPass = document.getElementById("newPassword").value;
-      let res = await fetch("/update-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ current: current, new: newPass })
-      });
-      let data = await res.json();
-      let msg = document.getElementById("passwordMsg");
-      msg.innerText = data.message;
-      msg.style.color = data.success ? "green" : "red";
+      const msg = document.getElementById("passwordMsg");
+
+      if (!current || !newPass) {
+          showAlert(msg, "❌ Both password fields must be filled.", false);
+          return;
+      }
+      
+      try {
+          let res = await fetch("/update-password", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ current: current, new: newPass })
+          });
+          
+          let data = await res.json();
+          showAlert(msg, data.message, data.success);
+          
+          // Clear fields on success
+          if (data.success) {
+              document.getElementById("currentPassword").value = "";
+              document.getElementById("newPassword").value = "";
+          }
+      } catch (e) {
+          showAlert(msg, "❌ Network error. Could not update password.", false);
+      }
     }
 
+    // Existing Toggle Theme Function
     async function toggleTheme() {
       let currentTheme = document.body.classList.contains("dark") ? "dark" : "light";
       let newTheme = currentTheme === "light" ? "dark" : "light";
+      
       document.body.classList.toggle("dark");
-      document.getElementById("themeBtn").innerText = newTheme === "light" ? "Switch to Dark" : "Switch to Light";
+      document.getElementById("themeBtn").innerText = newTheme === "light" ? "Switch to Light" : "Switch to Dark";
 
-      await fetch("/update-theme", {
+      const res = await fetch("/update-theme", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ theme: newTheme })
       });
+      // No need to check res.ok here, theme toggle is mostly cosmetic.
     }
 
-    // Apply theme on load
+    // Advanced: Apply theme and set initial goal on load
     window.onload = async () => {
-      let res = await fetch("/get-theme");
-      let data = await res.json();
-      if (data.theme === "dark") {
-        document.body.classList.add("dark");
-        document.getElementById("themeBtn").innerText = "Switch to Light";
-      } else {
-        document.getElementById("themeBtn").innerText = "Switch to Dark";
+      // 1. Theme initialization
+      try {
+          let res = await fetch("/get-theme");
+          let data = await res.json();
+          if (data.theme === "dark") {
+              document.body.classList.add("dark");
+              document.getElementById("themeBtn").innerText = "Switch to Light";
+          } else {
+              document.getElementById("themeBtn").innerText = "Switch to Dark";
+          }
+      } catch (e) {
+          console.warn("Could not fetch theme preference, defaulting to light.");
+          document.getElementById("themeBtn").innerText = "Switch to Dark";
+      }
+
+      // 2. Set initial Health Goal from Flask data
+      // We rely on Flask passing the 'current_goal' variable to the template (which it does not in the original snippet, but must for the code to work)
+      // Since Flask passes current_weight, we assume it passes current_goal too.
+      // Jinja2 template is rendered like this: <select ... id="healthGoal"><option value="lose">...</option> ...</select>
+      const goalSelect = document.getElementById('healthGoal');
+      const initialGoal = "{{ current_goal }}"; // Assuming Flask passes this context variable
+
+      // Find the option whose value matches the current goal and set it as selected
+      for (let i = 0; i < goalSelect.options.length; i++) {
+          if (goalSelect.options[i].value === initialGoal) {
+              goalSelect.selectedIndex = i;
+              break;
+          }
       }
     }
   </script>

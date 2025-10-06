@@ -1,268 +1,443 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>NutriDash - Dashboard</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <title>NutriDash - Ultimate Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    body { background: hwb(210 63% 4%); font-family: "Segoe UI", Tahoma, sans-serif; margin: 0; display: flex; }
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Global & Sidebar Styles */
+        body { 
+            background: #f8f9fa; 
+            font-family: "Segoe UI", Tahoma, sans-serif; 
+            margin: 0; 
+            display: flex; 
+            transition: all 0.3s ease;
+        }
+        .sidebar { 
+            width: 230px; 
+            height: 100vh; 
+            position: fixed; 
+            left: 0; 
+            top: 0; 
+            background: linear-gradient(180deg, #2c3e50, #34495e); 
+            color: white; 
+            padding-top: 20px;
+            box-shadow: 3px 0 15px rgba(0,0,0,0.1);
+            z-index: 1000; /* Ensure sidebar is on top */
+        }
+        .sidebar h3 { text-align: center; margin-bottom: 30px; font-size: 22px; letter-spacing: 1px; }
+        .sidebar ul { list-style: none; padding: 0; }
+        .sidebar ul li { margin: 15px 0; }
+        .sidebar ul li a { 
+            color: white; 
+            text-decoration: none; 
+            font-size: 16px; 
+            display: flex; 
+            align-items: center; 
+            padding: 10px 20px; 
+            transition: background 0.3s; 
+            border-radius: 8px; 
+        }
+        .sidebar ul li a i { margin-right: 10px; }
+        .sidebar ul li a:hover, .sidebar ul li a.active { background: #1abc9c; box-shadow: 0 0 8px rgba(0,0,0,0.3); }
+        .sidebar .logout { margin-top: 30px; text-align: center; display: block; color: #f8d7da; font-weight: bold; }
 
-    /* Sidebar */
-    .sidebar { width: 230px; height: 100vh; position: fixed; left: 0; top: 0; background: linear-gradient(180deg, #2c3e50, #34495e); color: white; padding-top: 20px; }
-    .sidebar h3 { text-align: center; margin-bottom: 30px; font-size: 22px; }
-    .sidebar ul { list-style: none; padding: 0; }
-    .sidebar ul li { margin: 15px 0; }
-    .sidebar ul li a { color: white; text-decoration: none; font-size: 16px; display: flex; align-items: center; padding: 10px 20px; transition: background 0.3s; border-radius: 8px; }
-    .sidebar ul li a i { margin-right: 10px; }
-    .sidebar ul li a:hover, .sidebar ul li a.active { background: #1abc9c; }
-    .sidebar .logout { margin-top: 30px; text-align: center; display: block; color: #f8d7da; }
+        /* Main Content Layout */
+        .content { 
+            margin-left: 230px; 
+            padding: 30px; 
+            flex: 1; 
+            position: relative; /* Needed for absolute positioning of profile */
+        }
+        h2 { color: #2c3e50; font-weight: 700; }
+        .card { 
+            border: none; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            transition: transform 0.2s ease-in-out; 
+        }
+        .card:hover { 
+            transform: translateY(-3px); 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15); 
+        }
+        
+        /* ADVANCED CONTROL BAR */
+        .control-bar {
+            background-color: #ffffff;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
 
-    /* Content */
-    .content { margin-left: 230px; padding: 30px; flex: 1; }
-    .card { border: none; border-radius: 12px; transition: transform 0.2s ease-in-out; }
-    .card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
-    .nutrition-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; margin-bottom: 30px; }
-    .food-card { position: relative; border-radius: 12px; overflow: hidden; box-shadow: 0 3px 10px rgba(0,0,0,0.15); cursor: pointer; transition: transform 0.2s ease-in-out; height: 180px; }
-    .food-card:hover { transform: scale(1.05); }
-    .food-card.healthy { border: 3px solid #0aee69; }
-    .food-card.junk { border: 3px solid #f71e06; }
-    .food-card.dairy { border: 3px solid #e6f10a; }
-    .food-card.frozen { border: 3px solid #0499fc; }
-    .food-image { width: 100%; height: 100%; background-size: cover; background-position: center; position: relative; }
-    .click-btn { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); color: white; padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; opacity: 0; transition: opacity 0.3s; }
-    .food-card:hover .click-btn { opacity: 1; }
-    .search-input, .filter-select { width: 200px; display: inline-block; margin-right: 10px; margin-bottom: 20px; }
-    .section { display: none; }
-    .tip-header { cursor: pointer; font-weight: bold; color: #28a745; margin-bottom: 5px; }
-    .tip-content { display: none; margin-left: 15px; }
-    .food-type-buttons .btn { display: flex; align-items: center; gap: 5px; }
+        /* NEW DIET PLAN CARD */
+        #dietPlanCard {
+            background-color: #f7f9fa; /* Light background for the whole section */
+            border-left: 5px solid #3498db;
+            margin-bottom: 30px;
+            padding: 25px;
+        }
+        .meal-plan-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+        }
+        .meal-plan-item {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.08);
+            border: 1px solid #eee;
+        }
+        .meal-plan-item strong {
+            color: #2c3e50;
+            display: block;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+        .macro-tag {
+            display: inline-block;
+            font-size: 0.8em;
+            padding: 3px 8px;
+            margin-right: 5px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        .tag-protein { background-color: #d4edda; color: #155724; }
+        .tag-carb { background-color: #fff3cd; color: #856404; }
+        .tag-fat { background-color: #f8d7da; color: #721c24; }
 
-    /* Recommended foods highlight */
-    .food-card.recommended { box-shadow: 0 0 15px 3px #1abc9c; transform: scale(1.05); border-width: 4px; }
-  </style>
+
+        /* Food Card Styling (Advanced & Image Size Adjustment) */
+        .nutrition-container { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 20px; 
+        }
+        .food-card { 
+            position: relative; 
+            border-radius: 10px; 
+            overflow: hidden; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+            cursor: pointer; 
+            transition: transform 0.2s ease-in-out, box-shadow 0.3s; 
+            height: 220px; 
+            display: flex;
+            flex-direction: column;
+        }
+        .food-card:hover { transform: scale(1.03); }
+
+        .food-image-wrapper { height: 120px; width: 100%; overflow: hidden; border-bottom: 1px solid #eee; }
+        .food-image { width: 100%; height: 100%; background-size: cover; background-position: center; transition: transform 0.5s ease; }
+        .food-card:hover .food-image { transform: scale(1.05); }
+
+        .food-info { padding: 10px; text-align: center; flex-grow: 1; background-color: white; }
+        .food-info strong { display: block; font-size: 1.1em; color: #34495e; margin-bottom: 5px; }
+        .food-info small { color: #999; }
+        
+        .food-card.recommended { box-shadow: 0 0 15px 3px #1abc9c; border: 3px solid #1abc9c; transform: none; }
+        .food-card.recommended .food-info { background-color: #e6fff7; }
+
+        .food-card.healthy { border: 2px solid #2ecc71; }
+        .food-card.junk { border: 2px solid #e74c3c; }
+        .food-card.dairy { border: 2px solid #f1c40f; }
+        .food-card.frozen { border: 2px solid #3498db; }
+
+        /* PROFILE STYLING */
+        .profile-area {
+            position: absolute;
+            top: 30px; 
+            right: 30px; 
+            z-index: 10; 
+        }
+        .profile-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: #1abc9c; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2em;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .profile-icon:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .profile-area .dropdown-menu {
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            border: none;
+            min-width: 180px;
+        }
+        .profile-area .dropdown-item {
+            color: #34495e;
+            padding: 10px 15px;
+            transition: background-color 0.2s;
+        }
+        .profile-area .dropdown-item:hover {
+            background-color: #e9f5f5;
+            color: #1abc9c;
+        }
+        .profile-area .dropdown-item i {
+            margin-right: 8px;
+            width: 20px; 
+        }
+    </style>
 </head>
 <body>
 
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <h3><i class="fas fa-leaf"></i> NutriDash</h3>
-    <ul>
-      <li><a href="/dashboard" class="{% if request.path == '/dashboard' %}active{% endif %}"><i class="fas fa-home"></i> Dashboard</a></li>
-      <li><a href="/food-analysis" class="{% if request.path == '/food-analysis' %}active{% endif %}"><i class="fas fa-apple-alt"></i> Food Analysis</a></li>
-      <li><a href="/reports" class="{% if request.path == '/reports' %}active{% endif %}"><i class="fas fa-chart-bar"></i> Reports</a></li>
-      <li><a href="/settings" class="{% if request.path == '/settings' %}active{% endif %}"><i class="fas fa-cog"></i> Settings</a></li>
-      <li><a href="/tracker" class="{% if request.path == '/tracker' %}active{% endif %}"><i class="fas fa-utensils"></i> Tracker</a></li>
-      <li><a href="/logout" class="logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-    </ul>
-  </div>
+    <div class="sidebar">
+        <h3><i class="fas fa-leaf"></i> NutriDash</h3>
+        <ul>
+            <li><a href="{{ url_for('dashboard') }}" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="{{ url_for('food_analysis') }}"><i class="fas fa-apple-alt"></i> Food Analysis</a></li>
+            <li><a href="{{ url_for('reports') }}"><i class="fas fa-chart-bar"></i> Reports</a></li>
+            <li><a href="{{ url_for('settings') }}"><i class="fas fa-cog"></i> Settings</a></li>
+            <li><a href="{{ url_for('tracker') }}"><i class="fas fa-utensils"></i> Tracker</a></li>
+            <li><a href="{{ url_for('logout') }}" class="logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </div>
 
-  <!-- Main Content -->
-  <div class="content">
+    <div class="content">
 
-    <!-- Dashboard -->
-    <div id="dashboardSection" class="section">
-      <h2 class="mb-3">Welcome, {{ username }} 🎉</h2>
-      <a href="{{ url_for('food_analysis') }}" class="btn btn-success mb-4">🧪 Classify Food</a>
+        <h2 class="mb-4">Welcome, {{ username }} 🎉</h2>
 
-      <!-- Weight Goal Selector -->
-      <div class="mb-4">
-        <label for="weightGoal" class="form-label fw-bold">🎯 Select Your Weight Goal:</label>
-        <select id="weightGoal" class="form-select" onchange="filterFoods()">
-          <option value="">-- Select Goal --</option>
-          <option value="lose">Lose Weight</option>
-          <option value="maintain">Maintain Weight</option>
-          <option value="gain">Gain Weight</option>
-        </select>
-      </div>
-
-      <!-- Food Type Buttons -->
-      <div class="mb-4 food-type-buttons d-flex flex-wrap gap-2">
-        <button class="btn btn-outline-success" onclick="filterByType('healthy')">🥗 Healthy Foods</button>
-        <button class="btn btn-outline-danger" onclick="filterByType('junk')">🍔 Junk Foods</button>
-        <button class="btn btn-outline-warning" onclick="filterByType('dairy')">🥛 Dairy</button>
-        <button class="btn btn-outline-primary" onclick="filterByType('frozen')">❄️ Frozen/Packed</button>
-        <button class="btn btn-outline-secondary" onclick="filterByType('')">🔄 All Foods</button>
-      </div>
-
-      <!-- Health & Diet Tips -->
-      <div class="mb-4">
-        <h4>💡 Health & Diet Tips</h4>
-        <div class="tip-header" onclick="toggleTip('healthyTips')">🥗 Healthy Foods</div>
-        <div class="tip-content" id="healthyTips">
-          <ul>
-            <li>Best consumed in morning or lunch for sustained energy.</li>
-            <li>Include fruits, vegetables, and protein for balanced meals.</li>
-            <li>Hydrate well to aid digestion and nutrient absorption.</li>
-          </ul>
-        </div>
-        <div class="tip-header" onclick="toggleTip('junkTips')">🍔 Junk Foods</div>
-        <div class="tip-content" id="junkTips">
-          <ul>
-            <li>Avoid late-night consumption; limit to occasional treats.</li>
-            <li>High sugar, salt, and unhealthy fats; avoid frequent intake.</li>
-            <li>Combine with active lifestyle if consumed occasionally.</li>
-          </ul>
-        </div>
-        <div class="tip-header" onclick="toggleTip('dairyTips')">🥛 Dairy Products</div>
-        <div class="tip-content" id="dairyTips">
-          <ul>
-            <li>Consume milk or yogurt in the morning or post-workout for protein.</li>
-            <li>Choose low-fat or unsweetened options to reduce sugar/fat intake.</li>
-            <li>Good for bones, digestion, and overall protein intake.</li>
-          </ul>
-        </div>
-        <div class="tip-header" onclick="toggleTip('frozenTips')">❄️ Frozen/Packed Foods</div>
-        <div class="tip-content" id="frozenTips">
-          <ul>
-            <li>High in preservatives, artificial flavors, and trans fats.</li>
-            <li>Consume rarely; prioritize fresh foods whenever possible.</li>
-            <li>Often contain preservatives, artificial colors, flavor enhancers, sweeteners, and harmful oils.</li>
-          </ul>
-        </div>
-      </div>
-
-      <!-- Search & Filters -->
-      <input type="text" id="searchName" class="form-control search-input" placeholder="Search food by name..." onkeyup="filterFoods()">
-      <select id="filterType" class="form-select filter-select" onchange="filterFoods()">
-        <option value="">All Types</option>
-        <option value="healthy">Healthy</option>
-        <option value="junk">Junk</option>
-        <option value="dairy">Dairy</option>
-        <option value="frozen">Frozen/Packed</option>
-      </select>
-
-      <!-- Foods Section -->
-      <div class="nutrition-container" id="foodContainer">
-        {% for food in foods %}
-        <div class="food-card {{ food.type }}" data-calories="{{ food.calories }}">
-          <div class="food-image" style="background-image: url('{{ url_for('static', filename='images/' + food.name|replace(' ','_') + '.jpg') }}');">
-            <div class="click-btn" onclick="openModal('{{ food.name|escape }}','{{ food.calories }}','{{ food.protein }}','{{ food.fat }}','{{ food.carbs }}','{{ food.description|escape }}')">
-              Click Here
+        <div class="profile-area dropdown">
+            <div class="profile-icon" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-user"></i> 
             </div>
-          </div>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                <li><h6 class="dropdown-header">Hello, {{ username }}!</h6></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="/profile"><i class="fas fa-id-badge"></i> My Profile</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('settings') }}"><i class="fas fa-cog"></i> Account Settings</a></li>
+                <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
         </div>
-        {% endfor %}
-      </div>
+        <div class="control-bar">
+            
+            <div style="flex-basis: 250px;">
+                <label for="weightGoal" class="form-label fw-bold text-primary mb-1">
+                    <i class="fas fa-bullseye"></i> Set Your Goal
+                </label>
+                <select id="weightGoal" class="form-select" onchange="filterFoods(); displayDietPlan()">
+                    <option value="">-- Select Goal --</option>
+                    <option value="lose">Lose Weight (Calorie Deficit)</option>
+                    <option value="maintain">Maintain Weight (Calorie Balance)</option>
+                    <option value="gain">Gain Weight (Calorie Surplus)</option>
+                </select>
+            </div>
+
+            <div style="flex-grow: 1;">
+                <label for="searchName" class="form-label fw-bold text-secondary mb-1">
+                    <i class="fas fa-search"></i> Search Food
+                </label>
+                <input type="text" id="searchName" class="form-control" placeholder="Search food name..." onkeyup="filterFoods()">
+            </div>
+
+            <div style="flex-basis: 180px;">
+                <label for="filterType" class="form-label fw-bold text-secondary mb-1">
+                    <i class="fas fa-filter"></i> Filter Type
+                </label>
+                <select id="filterType" class="form-select" onchange="filterFoods()">
+                    <option value="">All Types</option>
+                    <option value="healthy">Healthy 🥗</option>
+                    <option value="junk">Junk 🍔</option>
+                    <option value="dairy">Dairy 🥛</option>
+                    <option value="frozen">Frozen ❄️</option>
+                </select>
+            </div>
+
+        </div>
+        
+        <div id="dietPlanCard" class="card p-4">
+            <h4 class="mb-3 text-primary"><i class="fas fa-clipboard-list me-2"></i> Sample Goal-Based Diet Plan</h4>
+            <div id="dietPlanOutput">
+                <p class="text-muted">Select a **Weight Goal** in the control bar above to generate a sample meal plan focusing on key macros for your objective.</p>
+            </div>
+        </div>
+
+
+        <h4 class="mb-3 mt-4 text-dark"><i class="fas fa-list-alt me-2"></i> Food Library (Recommended items are highlighted)</h4>
+        <div class="nutrition-container" id="foodContainer">
+            {% for food in foods %}
+            {% set filename = food.name|replace(' ','_')|lower ~ '.jpg' %}
+            <div class="food-card {{ food.type }}" 
+                 data-calories="{{ food.calories }}" 
+                 data-protein="{{ food.protein }}"
+                 data-food-name="{{ food.name|escape }}">
+                
+                <div class="food-image-wrapper">
+                    <div class="food-image" style="background-image: url('{{ url_for('static', filename='images/' + filename) }}');">
+                    </div>
+                </div>
+
+                <div class="food-info" 
+                     onclick="openModal('{{ food.name|escape }}','{{ food.calories }}','{{ food.protein }}','{{ food.fat }}','{{ food.carbs }}','{{ food.description|escape }}')">
+                    <strong>{{ food.name }}</strong>
+                    <small>{{ food.calories }} kcal</small>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
     </div>
 
-    <!-- Food Analysis -->
-    <div id="foodSection" class="section">
-      <h2>🥗 Food Analysis</h2>
-      <p>Here you can analyze or classify foods.</p>
+    <div class="modal fade" id="foodModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content p-4">
+                <h4 id="modalName" class="text-primary mb-3"></h4>
+                <p id="modalCalories" class="mb-1"></p>
+                <p id="modalProtein" class="mb-1"></p>
+                <p id="modalFat" class="mb-1"></p>
+                <p id="modalCarbs" class="mb-3"></p>
+                <p id="modalDescription" class="text-muted"></p>
+                <button type="button" class="btn btn-secondary mt-3" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
     </div>
-
-    <!-- Reports -->
-    <div id="reportsSection" class="section">
-      <h2>📊 Reports</h2>
-      <canvas id="caloriesChart" height="150"></canvas>
-    </div>
-
-    <!-- Settings -->
-    <div id="settingsSection" class="section">
-      <h2>⚙️ Settings</h2>
-      <p>User preferences and profile settings.</p>
-    </div>
-  </div>
-
-  <!-- Food Info Modal -->
-  <div class="modal fade" id="foodModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content p-3">
-        <h4 id="modalName"></h4>
-        <p id="modalCalories"></p>
-        <p id="modalProtein"></p>
-        <p id="modalFat"></p>
-        <p id="modalCarbs"></p>
-        <p id="modalDescription"></p>
-        <button type="button" class="btn btn-secondary mt-2" data-bs-dismiss="modal">Close</button>
-      </div>
-    </div>
-  </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  // Show section
-  function showSection(id) {
-    document.querySelectorAll('.section').forEach(sec => sec.style.display = 'none');
-    document.getElementById(id).style.display = 'block';
-    if(id === 'reportsSection') renderChart();
-  }
-
-  // Food Modal
-  function openModal(name, calories, protein, fat, carbs, desc){
-    document.getElementById('modalName').textContent = name;
-    document.getElementById('modalCalories').textContent = 'Calories: ' + calories + ' kcal';
-    document.getElementById('modalProtein').textContent = 'Protein: ' + protein + ' g';
-    document.getElementById('modalFat').textContent = 'Fat: ' + fat + ' g';
-    document.getElementById('modalCarbs').textContent = 'Carbs: ' + carbs + ' g';
-    document.getElementById('modalDescription').textContent = desc;
-    new bootstrap.Modal(document.getElementById('foodModal')).show();
-  }
-
-  // Toggle health tips
-  function toggleTip(id){
-    const el = document.getElementById(id);
-    el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'block' : 'none';
-  }
-
-  // Chart.js
-  function renderChart() {
-    const caloriesData = {
-      labels: ['Healthy', 'Junk', 'Dairy', 'Frozen/Packed'],
-      datasets: [{
-        label: 'Calories',
-        data: [
-          {{ foods|selectattr("type","equalto","healthy")|map(attribute="calories")|sum | tojson }},
-          {{ foods|selectattr("type","equalto","junk")|map(attribute="calories")|sum | tojson }},
-          {{ foods|selectattr("type","equalto","dairy")|map(attribute="calories")|sum | tojson }},
-          {{ foods|selectattr("type","equalto","frozen")|map(attribute="calories")|sum | tojson }}
-        ],
-        backgroundColor: ['#27ae60', '#e74c3c', '#f39c12', '#3498db']
-      }]
-    };
-    new Chart(document.getElementById('caloriesChart'), { type: 'bar', data: caloriesData, options: { responsive: true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}} });
-  }
-
-  // Dynamic Filter + Weight Goal Recommendation
-  function filterFoods() {
-    const name = document.getElementById('searchName').value.toLowerCase();
-    const typeFilter = document.getElementById('filterType').value;
-    const weightGoal = document.getElementById('weightGoal').value;
-
-    document.querySelectorAll('.food-card').forEach(card => {
-      const cardName = card.innerText.toLowerCase();
-      const cardType = card.classList.contains('healthy') ? 'healthy' : card.classList.contains('junk') ? 'junk' : card.classList.contains('dairy') ? 'dairy' : 'frozen';
-      const calories = parseInt(card.dataset.calories);
-      let show = true;
-
-      // Name filter
-      if(name && !cardName.includes(name)) show = false;
-      // Type filter
-      if(typeFilter && cardType !== typeFilter) show = false;
-
-      // Remove previous recommendation highlight
-      card.classList.remove('recommended');
-
-      // Weight goal recommendation logic
-      if(weightGoal === 'lose' && calories <= 150) card.classList.add('recommended');
-      if(weightGoal === 'maintain' && calories >= 150 && calories <= 300) card.classList.add('recommended');
-      if(weightGoal === 'gain' && calories > 300) card.classList.add('recommended');
-
-      card.style.display = show ? 'flex' : 'none';
+    // Initial display is the dashboard
+    document.addEventListener('DOMContentLoaded', () => {
+        filterFoods();
+        displayDietPlan(); // Load initial plan (will show default message)
     });
-  }
 
-  function filterByType(type) {
-    document.getElementById('filterType').value = type;
-    filterFoods();
-  }
+    // Food Modal
+    function openModal(name, calories, protein, fat, carbs, desc){
+        document.getElementById('modalName').textContent = name;
+        document.getElementById('modalCalories').innerHTML = `<strong>Calories:</strong> ${calories} kcal`;
+        document.getElementById('modalProtein').innerHTML = `<strong>Protein:</strong> ${protein} g`;
+        document.getElementById('modalFat').innerHTML = `<strong>Fat:</strong> ${fat} g`;
+        document.getElementById('modalCarbs').innerHTML = `<strong>Carbs:</strong> ${carbs} g`;
+        document.getElementById('modalDescription').textContent = desc;
+        new bootstrap.Modal(document.getElementById('foodModal')).show();
+    }
 
-  // Initial
-  showSection('dashboardSection');
+    // Dynamic Filter & Recommendation Logic (Kept)
+    function filterFoods() {
+        const nameFilter = document.getElementById('searchName').value.toLowerCase();
+        const typeFilter = document.getElementById('filterType').value;
+        const weightGoal = document.getElementById('weightGoal').value; // 'lose', 'maintain', 'gain'
+
+        document.querySelectorAll('.food-card').forEach(card => {
+            const cardName = card.dataset.foodName.toLowerCase();
+            const cardType = card.classList.contains('healthy') ? 'healthy' : 
+                                 card.classList.contains('junk') ? 'junk' : 
+                                 card.classList.contains('dairy') ? 'dairy' : 'frozen';
+            const calories = parseInt(card.dataset.calories);
+            const protein = parseInt(card.dataset.protein);
+            let show = true;
+
+            // 1. Filtering Logic
+            if (nameFilter && !cardName.includes(nameFilter)) show = false;
+            if (typeFilter && cardType !== typeFilter) show = false;
+
+            // 2. Recommendation Logic (Highlighter)
+            card.classList.remove('recommended');
+            let isRecommended = false;
+
+            // LOSE: Low calorie, Healthy focus, Moderate Protein (for muscle preservation)
+            if (weightGoal === 'lose' && calories <= 250 && cardType === 'healthy' && protein >= 5) {
+                isRecommended = true;
+            } 
+            // MAINTAIN: Balanced calorie (approx 200-400), non-junk
+            else if (weightGoal === 'maintain' && calories >= 150 && calories <= 400 && cardType !== 'junk') {
+                isRecommended = true;
+            } 
+            // GAIN: High calorie (min 300), High Protein (min 10g)
+            else if (weightGoal === 'gain' && calories >= 300 && protein >= 10) {
+                isRecommended = true;
+            }
+
+            if (isRecommended) card.classList.add('recommended');
+
+            // 3. Apply Visibility
+            card.style.display = show ? 'flex' : 'none';
+        });
+    }
+    
+    // --- ADVANCED FEATURE: DIET PLAN GENERATOR ---
+    function displayDietPlan() {
+        const goal = document.getElementById('weightGoal').value;
+        const outputDiv = document.getElementById('dietPlanOutput');
+        let planHtml = '';
+
+        if (!goal) {
+            outputDiv.innerHTML = '<p class="text-muted">Select a **Weight Goal** above to generate a sample meal plan focusing on key macros for your objective.</p>';
+            return;
+        }
+
+        const plans = {
+            lose: {
+                focus: 'Calorie Deficit & High Protein (Avg 350-450 kcal/meal)',
+                meals: [
+                    { meal: 'Breakfast 🍳', focus: 'High Fiber/Protein', cal: '250-300', example: 'Oatmeal (150kcal) with fruit, or 2 Eggs (140kcal) & Spinach (40kcal).' },
+                    { meal: 'Lunch 🥗', focus: 'Lean Protein & Veggies', cal: '350-450', example: 'Salad (150kcal) + Grilled Chicken (250kcal) or Dal (180kcal) + Brown Rice (100kcal portion).' },
+                    { meal: 'Dinner 🍽️', focus: 'Low Carb/Fat', cal: '300-400', example: 'Fish (200kcal) with steamed veggies, or Curd (100kcal) and Chapati (120kcal).' },
+                    { meal: 'Snack 🍎', focus: 'Hydration / Fiber', cal: '50-150', example: 'Apple (95kcal), Orange (62kcal), or Watermelon (46kcal).' }
+                ]
+            },
+            maintain: {
+                focus: 'Balanced Macronutrients (Avg 500-600 kcal/meal)',
+                meals: [
+                    { meal: 'Breakfast 🥣', focus: 'Complex Carbs & Protein', cal: '450-550', example: 'Upma (200kcal) with Paneer (100kcal) and Tea (70kcal).' },
+                    { meal: 'Lunch 🍛', focus: 'Full Balanced Meal', cal: '550-650', example: 'Brown Rice (215kcal) + Dal (180kcal) + Veggie (40kcal) + Curd (100kcal).' },
+                    { meal: 'Dinner 🍗', focus: 'Moderate Energy', cal: '450-550', example: 'Chicken (165kcal) or Rajma (140kcal), with 2 Chapatis (240kcal).' },
+                    { meal: 'Snack 🥜', focus: 'Healthy Fats/Energy', cal: '150-250', example: 'Peanuts (160kcal) or Greek Yogurt (120kcal) with a Banana (105kcal).' }
+                ]
+            },
+            gain: {
+                focus: 'Calorie Surplus & Max Protein (Avg 700+ kcal/meal)',
+                meals: [
+                    { meal: 'Breakfast 💪', focus: 'Max Calories & Protein', cal: '650-800', example: 'Poha (180kcal) + Eggs (140kcal) + Milkshake (380kcal) and Almonds (70kcal).' },
+                    { meal: 'Lunch 🍝', focus: 'Dense Energy Source', cal: '750-900', example: 'Large Rice (400kcal) + Soybean (170kcal) + Chicken (165kcal) or Butter Paratha (220kcal).' },
+                    { meal: 'Dinner 🍔', focus: 'High Protein Post-Workout', cal: '650-800', example: 'Paneer (265kcal), 2 Chapatis (240kcal), and a glass of Milk (150kcal).' },
+                    { meal: 'Snack 🥛', focus: 'Liquid Calories/Protein', cal: '250-400', example: 'Ice Cream (200kcal - moderate junk) or Peanut Butter sandwich (not listed) with Milk.' }
+                ]
+            }
+        };
+
+        const currentPlan = plans[goal];
+        
+        planHtml += `<p class="fw-bold text-success">Goal Focus: ${currentPlan.focus}</p>`;
+        planHtml += `<div class="meal-plan-grid">`;
+
+        currentPlan.meals.forEach(item => {
+            planHtml += `
+                <div class="meal-plan-item">
+                    <strong><i class="fas fa-seedling me-1"></i> ${item.meal}</strong>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="text-primary">${item.focus}</small>
+                        <span class="badge text-bg-secondary">${item.cal} kcal</span>
+                    </div>
+                    
+                    <div class="d-flex mb-2">
+                        <span class="macro-tag tag-protein">P</span>
+                        <span class="macro-tag tag-carb">C</span>
+                        <span class="macro-tag tag-fat">F</span>
+                    </div>
+                    <small class="text-muted">${item.example}</small>
+                </div>
+            `;
+        });
+        
+        planHtml += `</div>`;
+        outputDiv.innerHTML = planHtml;
+    }
 </script>
 </body>
 </html>

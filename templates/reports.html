@@ -1,147 +1,276 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>NutriDash - Reports</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8">
+    <title>NutriDash - Reports & Trends</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Base styles copied from other pages */
+        body { background: #f4f6f9; font-family: "Segoe UI", Tahoma, sans-serif; margin: 0; display: flex; transition: all 0.3s ease; }
+        .sidebar {
+            width: 230px; height: 100vh; position: fixed; left: 0; top: 0;
+            background: linear-gradient(180deg, #2c3e50, #34495e); color: white; padding-top: 20px; box-shadow: 3px 0 15px rgba(0,0,0,0.1);
+        }
+        .sidebar h3 { text-align: center; margin-bottom: 30px; font-size: 22px; letter-spacing: 1px;}
+        .sidebar ul { list-style: none; padding: 0; }
+        .sidebar ul li { margin: 15px 0; }
+        .sidebar ul li a {
+            color: white; text-decoration: none; font-size: 16px; display: flex;
+            align-items: center; padding: 10px 20px; transition: all 0.3s ease; border-radius: 8px;
+        }
+        .sidebar ul li a i { margin-right: 10px; }
+        .sidebar ul li a:hover, .sidebar ul li a.active { background: #1abc9c; box-shadow: 0 2px 8px rgba(0,0,0,0.2);}
+        .sidebar .logout { margin-top: 30px; text-align: center; display: block; color: #f8d7da; font-weight: bold;}
+        .content { margin-left: 230px; padding: 30px; flex: 1; }
+        h2 { margin-bottom: 30px; color: #2c3e50; font-weight: 700; }
+        
+        /* Reports Specific Styles */
+        .report-card {
+            background-color: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        .nav-link.active {
+            background-color: #1abc9c !important;
+            color: white !important;
+            font-weight: 600;
+        }
+        .chart-container {
+            height: 400px;
+            width: 100%;
+            margin-top: 20px;
+        }
 
-  <style>
-    body { font-family: 'Segoe UI', sans-serif; background: hwb(208 59% 4%); margin:0; display:flex;}
-    
-    /* Sidebar */
-    .sidebar {
-      width: 230px; height: 100vh; position: fixed; left: 0; top: 0;
-      background: linear-gradient(180deg, #2c3e50, #34495e); color: white; padding-top: 20px;
-    }
-    .sidebar h3 { text-align:center; margin-bottom:30px; font-size:22px;}
-    .sidebar ul { list-style:none; padding:0;}
-    .sidebar ul li { margin:15px 0;}
-    .sidebar ul li a {
-      color:white; text-decoration:none; font-size:16px; display:flex;
-      align-items:center; padding:10px 20px; border-radius:8px; transition:all 0.3s ease;
-    }
-    .sidebar ul li a i { margin-right:10px;}
-    .sidebar ul li a:hover, .sidebar ul li a.active { background:#1abc9c; }
-    .sidebar .logout { margin-top:30px; text-align:center; color:#f8d7da; display:block; }
+        /* NEW: Goal Suggestion Card Styles */
+        #goalSuggestionCard {
+            background-color: #e8f5e9;
+            border-left: 5px solid #28a745;
+            margin-bottom: 30px;
+        }
+        .goal-macro-box {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .goal-macro-box h5 {
+            color: #2c3e50;
+            font-size: 1.2rem;
+            margin-bottom: 0;
+        }
+        .goal-macro-box p {
+            color: #1abc9c;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0;
+        }
 
-    /* Content */
-    .content { margin-left:230px; padding:30px; flex:1; }
-    .card { border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); padding:20px; margin-bottom:20px; background:white; }
-    #mealHistory { max-height:300px; overflow-y:auto; }
-    #mealHistory table th, #mealHistory table td { text-align:center; font-size:14px; }
-  </style>
+    </style>
 </head>
-<body>
+<body onload="loadReportData('daily'); fetchGoalSuggestion()">
 
 <div class="sidebar">
-  <h3><i class="fas fa-leaf"></i> NutriDash</h3>
-  <ul>
-    <li><a href="/dashboard"><i class="fas fa-home"></i> Dashboard</a></li>
-    <li><a href="/food-analysis"><i class="fas fa-apple-alt"></i> Food Analysis</a></li>
-    <li><a href="/reports" class="active"><i class="fas fa-chart-bar"></i> Reports</a></li>
-    <li><a href="/settings"><i class="fas fa-cog"></i> Settings</a></li>
-    <li><a href="/tracker"><i class="fas fa-utensils"></i> Tracker</a></li>
-    <li><a href="/logout" class="logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-  </ul>
+    <h3><i class="fas fa-leaf"></i> NutriDash</h3>
+    <ul>
+        <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> Dashboard</a></li>
+        <li><a href="{{ url_for('food_analysis') }}"><i class="fas fa-apple-alt"></i> Food Analysis</a></li>
+        <li><a href="{{ url_for('reports') }}" class="active"><i class="fas fa-chart-bar"></i> Reports</a></li>
+        <li><a href="{{ url_for('settings') }}"><i class="fas fa-cog"></i> Settings</a></li>
+        <li><a href="{{ url_for('tracker') }}"><i class="fas fa-utensils"></i> Tracker</a></li>
+        <li><a href="{{ url_for('logout') }}" class="logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+    </ul>
 </div>
 
 <div class="content">
-  <h2>📊 Nutrition Reports</h2>
+    <h2>📈 Historical Nutrition Reports</h2>
 
-  <!-- Summary Cards -->
-  <div class="row">
-    <div class="col-md-4"><div class="card"><h5>Total Calories</h5><h3 id="totalCalories">0</h3></div></div>
-    <div class="col-md-4"><div class="card"><h5>Total Protein (g)</h5><h3 id="totalProtein">0</h3></div></div>
-    <div class="col-md-4"><div class="card"><h5>Total Carbs (g)</h5><h3 id="totalCarbs">0</h3></div></div>
-  </div>
-
-  <div class="row mt-3">
-    <div class="col-md-4"><div class="card"><h5>Total Fat (g)</h5><h3 id="totalFat">0</h3></div></div>
-    <div class="col-md-4"><div class="card"><h5>Total Sugar (g)</h5><h3 id="totalSugar">0</h3></div></div>
-    <div class="col-md-4"><div class="card"><h5>Total Fiber (g)</h5><h3 id="totalFiber">0</h3></div></div>
-  </div>
-
-  <!-- Nutrition Chart -->
-  <div class="card mt-4">
-    <h5>Nutrition Breakdown</h5>
-    <canvas id="nutritionChart" height="150"></canvas>
-  </div>
-
-  <!-- Meal History -->
-  <div class="card mt-4">
-    <h5>Meal History</h5>
-    <div id="mealHistory" class="table-responsive">
-      <table class="table table-bordered">
-        <thead class="table-dark">
-          <tr>
-            <th>#</th><th>Date & Time</th><th>Calories</th><th>Protein</th><th>Carbs</th>
-            <th>Fat</th><th>Sugar</th><th>Fiber</th>
-          </tr>
-        </thead>
-        <tbody id="historyBody"></tbody>
-      </table>
+    <div id="goalSuggestionCard" class="report-card p-4">
+        <h4 class="mb-3"><i class="fas fa-bullseye me-2"></i> Your Personalized Diet Plan</h4>
+        <div id="goalOutput">
+            <p class="text-muted text-center"><i class="fas fa-spinner fa-spin"></i> Fetching targets based on your goal...</p>
+        </div>
     </div>
-  </div>
+    <div class="report-card">
+        <h4 class="mb-4 text-primary">Macro Trends Over Time</h4>
+        
+        <ul class="nav nav-tabs" id="reportTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="daily-tab" data-bs-toggle="tab" data-bs-target="#daily" type="button" role="tab" aria-controls="daily" aria-selected="true" onclick="loadReportData('daily')">7-Day View</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="monthly-tab" data-bs-toggle="tab" data-bs-target="#monthly" type="button" role="tab" aria-controls="monthly" aria-selected="false" onclick="loadReportData('monthly')">30-Day View</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="reportTabsContent">
+            
+            <div class="tab-pane fade show active" id="daily" role="tabpanel" aria-labelledby="daily-tab">
+                <div class="chart-container">
+                    <canvas id="macroChartDaily"></canvas>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="monthly" role="tabpanel" aria-labelledby="monthly-tab">
+                <div class="chart-container">
+                    <canvas id="macroChartMonthly"></canvas>
+                </div>
+            </div>
+            
+        </div>
+        
+        <p class="text-muted small mt-4">Note: Data visualization requires actual historical logs saved via the Tracker page.</p>
+
+    </div>
 </div>
 
 <script>
-  function loadReports() {
-    const meals = JSON.parse(localStorage.getItem('savedMeals') || '[]');
+    // Access the current username from the Jinja context passed by Flask
+    const CURRENT_USER = "{{ username }}"; 
 
-    // Totals
-    let totals = { calories:0, protein:0, carbs:0, fat:0, sugar:0, fiber:0 };
-    meals.forEach(m => {
-      totals.calories += m.nutrition.calories;
-      totals.protein += m.nutrition.protein;
-      totals.carbs += m.nutrition.carbs;
-      totals.fat += m.nutrition.fat;
-      totals.sugar += m.nutrition.sugar;
-      totals.fiber += m.nutrition.fiber;
-    });
+    // Hardcoded Mock Data (This would be fetched from Flask via /api/reports/daily or similar)
+    const MOCK_REPORT_DATA = {
+        'daily': {
+            labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
+            protein: [85, 92, 105, 78, 110, 95, 120],
+            calories: [2100, 2050, 2300, 1900, 2450, 2150, 2500],
+            fat: [60, 55, 75, 50, 80, 65, 70],
+        },
+        'monthly': {
+            labels: ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4'],
+            protein: [95, 100, 98, 105],
+            calories: [2150, 2200, 2100, 2300],
+            fat: [65, 70, 60, 72],
+        }
+    };
 
-    document.getElementById('totalCalories').textContent = totals.calories;
-    document.getElementById('totalProtein').textContent = totals.protein;
-    document.getElementById('totalCarbs').textContent = totals.carbs;
-    document.getElementById('totalFat').textContent = totals.fat;
-    document.getElementById('totalSugar').textContent = totals.sugar;
-    document.getElementById('totalFiber').textContent = totals.fiber;
+    let dailyChart = null;
+    let monthlyChart = null;
 
-    // Chart
-    const ctx = document.getElementById('nutritionChart').getContext('2d');
-    new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: ['Calories','Protein','Carbs','Fat','Sugar','Fiber'],
-        datasets:[{
-          label:'Total Nutrition',
-          data:[totals.calories, totals.protein, totals.carbs, totals.fat, totals.sugar, totals.fiber],
-          backgroundColor:['#1abc9c','#3498db','#f39c12','#e74c3c','#9b59b6','#2ecc71']
-        }]
-      },
-      options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
-    });
+    // --- NEW ADVANCED JS FUNCTION ---
+    async function fetchGoalSuggestion() {
+        const goalOutputDiv = document.getElementById('goalOutput');
 
-    // Meal history table
-    const tbody = document.getElementById('historyBody');
-    tbody.innerHTML = '';
-    meals.forEach((m,i) => {
-      tbody.innerHTML += `<tr>
-        <td>${i+1}</td>
-        <td>${m.timestamp}</td>
-        <td>${m.nutrition.calories}</td>
-        <td>${m.nutrition.protein}</td>
-        <td>${m.nutrition.carbs}</td>
-        <td>${m.nutrition.fat}</td>
-        <td>${m.nutrition.sugar}</td>
-        <td>${m.nutrition.fiber}</td>
-      </tr>`;
-    });
-  }
+        // Note: For this to work, Flask must have a route: /api/goals/<username>
+        try {
+            const response = await fetch(`/api/goals/${CURRENT_USER}`);
+            if (!response.ok) {
+                // If API fails (e.g., user not logged in, server error), use placeholders
+                throw new Error("Could not fetch personalized goals.");
+            }
+            
+            const data = await response.json();
+            
+            // Generate dynamic display based on goal
+            const goalText = `Based on your goal to **${data.goal}** and current weight (${data.weight} kg), your recommended daily intake is:`;
+            
+            const macroBoxes = `
+                <div class="row text-center mt-3">
+                    <div class="col-md-3 goal-macro-box mx-2">
+                        <h5>Calories</h5>
+                        <p>${data.target_calories} kcal</p>
+                    </div>
+                    <div class="col-md-3 goal-macro-box mx-2">
+                        <h5>Protein</h5>
+                        <p>${data.target_protein} g</p>
+                    </div>
+                    <div class="col-md-3 goal-macro-box mx-2">
+                        <h5>Carbs</h5>
+                        <p>${data.target_carbs} g</p>
+                    </div>
+                </div>
+                <p class="text-muted small mt-3">Recommended Fat Intake: ${data.target_fat} g (approx. 25% of calories).</p>
+            `;
 
-  window.onload = loadReports;
+            goalOutputDiv.innerHTML = `
+                <p class="fw-bold">${goalText}</p>
+                ${macroBoxes}
+            `;
+
+        } catch (error) {
+            goalOutputDiv.innerHTML = `
+                <p class="text-danger fw-bold">Error loading personalized plan.</p>
+                <p class="text-muted small">Please ensure your weight and health goal are set in the <a href="{{ url_for('settings') }}">Settings</a> page.</p>
+            `;
+        }
+    }
+
+
+    function loadReportData(period) {
+        const data = MOCK_REPORT_DATA[period];
+        const canvasId = `macroChart${period === 'daily' ? 'Daily' : 'Monthly'}`;
+        const ctx = document.getElementById(canvasId).getContext('2d');
+
+        if (period === 'daily' && dailyChart) { dailyChart.destroy(); }
+        if (period === 'monthly' && monthlyChart) { monthlyChart.destroy(); }
+
+        const newChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [
+                    {
+                        label: 'Protein (g)',
+                        data: data.protein,
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                        fill: true,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Calories (kcal)',
+                        data: data.calories,
+                        borderColor: '#e74c3c',
+                        backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                        fill: false,
+                        yAxisID: 'y1', 
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Fat (g)',
+                        data: data.fat,
+                        borderColor: '#f39c12',
+                        backgroundColor: 'rgba(243, 156, 18, 0.2)',
+                        fill: false,
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: `${period === 'daily' ? 'Last 7 Days' : 'Last 4 Weeks'} Nutrition Trend`,
+                        font: { size: 16 }
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: { display: true, text: 'Grams (g)' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: { display: true, text: 'Calories (kcal)' },
+                        grid: { drawOnChartArea: false } 
+                    }
+                }
+            }
+        });
+
+        if (period === 'daily') { dailyChart = newChart; }
+        if (period === 'monthly') { monthlyChart = newChart; }
+    }
 </script>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

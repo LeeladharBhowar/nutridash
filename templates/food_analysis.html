@@ -1,55 +1,126 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NutriDash Tracker Pro</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NutriDash - Advanced OCR Analysis</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    /* -------------------------------------- */
+    /* 1. Base and Sidebar Styles (Copied from Tracker) */
+    /* -------------------------------------- */
+    body { 
+        background: hwb(208 59% 4%); 
+        font-family: "Segoe UI", Tahoma, sans-serif; 
+        margin: 0; 
+        display: flex; 
+        transition: all 0.3s ease;
+    }
+    .sidebar {
+      width: 230px; height: 100vh; position: fixed; left: 0; top: 0;
+      background: linear-gradient(180deg, #2c3e50, #34495e); color: white; padding-top: 20px; box-shadow: 3px 0 15px rgba(0,0,0,0.1);
+    }
+    .sidebar h3 { text-align: center; margin-bottom: 30px; font-size: 22px; letter-spacing: 1px;}
+    .sidebar ul { list-style: none; padding: 0; }
+    .sidebar ul li { margin: 15px 0; }
+    .sidebar ul li a {
+      color: white; text-decoration: none; font-size: 16px; display: flex;
+      align-items: center; padding: 10px 20px; transition: all 0.3s ease; border-radius: 8px;
+    }
+    .sidebar ul li a i { margin-right: 10px; }
+    .sidebar ul li a:hover, .sidebar ul li a.active { background: #1abc9c; box-shadow: 0 2px 8px rgba(0,0,0,0.2);}
+    .sidebar .logout { margin-top: 30px; text-align: center; display: block; color: #f8d7da; font-weight: bold;}
 
-<style>
-  body { background: hwb(210 63% 4%); font-family: "Segoe UI", Tahoma, sans-serif; margin: 0; display: flex; }
-  /* Sidebar */
-  .sidebar {
-    width: 230px;
-    height: 100vh;
-    position: fixed;
-    left: 0;
-    top: 0;
-    background: linear-gradient(180deg, #2c3e50, #34495e);
-    color: white;
-    padding-top: 20px;
-  }
-  .sidebar h3 { text-align:center; margin-bottom:30px; font-size:22px; }
-  .sidebar ul { list-style:none; padding:0; }
-  .sidebar ul li { margin:15px 0; }
-  .sidebar ul li a { color:white; text-decoration:none; font-size:16px; display:flex; align-items:center; padding:10px 20px; transition: background 0.3s; border-radius:8px; }
-  .sidebar ul li a i { margin-right:10px; }
-  .sidebar ul li a:hover, .sidebar ul li a.active { background:#1abc9c; }
-  .sidebar .logout { margin-top:30px; text-align:center; display:block; color:#f8d7da; }
-  /* Content */
-  .content { margin-left:230px; padding:30px; flex:1; }
-  h2 { color: #fff; font-weight: 600; margin-bottom: 2rem; text-align:center; }
-  .card { border-radius: 15px; box-shadow: 0 6px 15px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; margin-bottom: 1.5rem; }
-  .card:hover { transform: translateY(-5px); box-shadow: 0 12px 25px rgba(0,0,0,0.15); }
-  #labelPreview { border: 2px dashed #ccc; padding: 5px; transition: transform 0.2s; max-height:200px; margin-top:10px; }
-  #labelPreview:hover { transform: scale(1.02); }
-  .health-green { color: #28a745; font-weight: bold; background-color: #e6f4ea; padding: 6px 12px; border-radius: 12px; display: inline-block; }
-  .health-orange { color: #fd7e14; font-weight: bold; background-color: #fff4e6; padding: 6px 12px; border-radius: 12px; display: inline-block; }
-  .health-red { color: #dc3545; font-weight: bold; background-color: #f8d7da; padding: 6px 12px; border-radius: 12px; display: inline-block; }
-  .btn-warning { background-color: #ffb600; border: none; font-weight: 500; transition: background-color 0.2s; }
-  .btn-warning:hover { background-color: #ffa500; }
-  #nutritionSummary li { font-size: 1rem; padding: 6px 0; list-style:none; }
-  .progress { height: 20px; border-radius: 12px; margin-bottom: 10px; }
-  @media (max-width: 576px) { #labelPreview { max-height: 150px; } }
-</style>
+    /* -------------------------------------- */
+    /* 2. Content and Card Styles */
+    /* -------------------------------------- */
+    .content { margin-left: 230px; padding: 30px; flex: 1; }
+    h2 { margin-bottom: 30px; color: #2c3e50; }
+    .btn-primary { background-color: #1abc9c; border-color: #1abc9c; transition: background-color 0.2s; }
+    .btn-primary:hover { background-color: #16a085; border-color: #16a085; }
+
+    /* ADVANCED Layout */
+    .analysis-grid {
+        display: flex;
+        gap: 25px;
+    }
+    .upload-card, .results-card {
+        background-color: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    .upload-card {
+        flex: 1; /* Takes primary upload space */
+        min-width: 350px;
+    }
+    .results-card {
+        flex: 2; /* Takes more space for results */
+        min-width: 500px;
+    }
+
+    /* Image Preview */
+    #imagePreview {
+        max-width: 100%;
+        max-height: 250px;
+        width: auto;
+        height: auto;
+        display: block;
+        margin: 15px auto;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        border: 2px dashed #ddd;
+        object-fit: contain;
+    }
+
+    /* Result Section Styling (To mimic AI output) */
+    .result-section h4 {
+        color: #34495e;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 5px;
+        margin-top: 20px;
+        font-weight: 600;
+    }
+    .verdict-box {
+        padding: 10px;
+        border-radius: 8px;
+        text-align: center;
+        font-weight: bold;
+        font-size: 1.2em;
+        transition: all 0.3s ease;
+    }
+    .verdict-Excellent, .verdict-Good { background-color: #d4edda; color: #155724; }
+    .verdict-Caution, .verdict-Okay { background-color: #fff3cd; color: #856404; }
+    .verdict-Poor, .verdict-Bad, .verdict-Error { background-color: #f8d7da; color: #721c24; }
+
+    /* Ingredients List Styling */
+    .ingredients-list {
+        list-style: none;
+        padding-left: 0;
+    }
+    .ingredients-list li {
+        margin-bottom: 5px;
+        padding: 5px;
+        border-bottom: 1px dotted #eee;
+    }
+
+
+    /* Media Queries for Responsiveness */
+    @media (max-width: 1000px) {
+        .analysis-grid {
+            flex-direction: column;
+        }
+    }
+    @media (max-width: 768px) {
+        .sidebar { width: 100%; height: auto; position: relative; }
+        .content { margin-left: 0; padding: 20px; }
+        .upload-card, .results-card { min-width: auto; }
+    }
+  </style>
 </head>
 <body>
 
-<!-- Sidebar -->
 <div class="sidebar">
   <h3><i class="fas fa-leaf"></i> NutriDash</h3>
   <ul>
@@ -61,152 +132,183 @@
     <li><a href="/logout" class="logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
   </ul>
 </div>
-
 <div class="content">
-  <h2>NutriDash Tracker Pro 🍏</h2>
+    <h2>📸 Food Label AI Analysis (OCR)</h2>
+    <p class="text-muted">Use multimodal AI to extract nutrition facts and ingredients directly from a label image for instant analysis and risk assessment.</p>
 
-  <!-- Upload Section -->
-  <div class="card p-3">
-    <h5>Upload Nutrition Label</h5>
-    <input type="file" class="form-control" id="labelImage" accept="image/*">
-    <img id="labelPreview" class="img-fluid rounded" style="display:none;">
-    <button class="btn btn-warning mt-2" onclick="analyzeLabelOCR()">Analyze Label</button>
-    <button class="btn btn-success mt-2" onclick="exportPDF()">Export Summary PDF</button>
-  </div>
+    <div class="analysis-grid">
+        
+        <div class="upload-card">
+            <h4>1. Upload Label & Preview</h4>
+            <p class="text-muted small">Ensure the image is clear and the text is legible for accurate OCR extraction.</p>
+            
+            <form id="ocrForm" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="fileInput" class="form-label fw-bold">Select Label Image (.jpg, .png)</label>
+                    <input class="form-control" type="file" id="fileInput" name="file" accept="image/*" onchange="previewImage(event)" required>
+                </div>
+                
+                <img id="imagePreview" src="#" alt="Image Preview" style="display:none;">
 
-  <!-- Nutrition Summary -->
-  <div class="card p-3">
-    <h5>Nutrition Summary</h5>
-    <ul id="nutritionSummary">
-      <li>Calories: 0</li>
-      <li>Protein: 0g</li>
-      <li>Fat: 0g</li>
-      <li>Carbs: 0g</li>
-      <li>Sugars: 0g</li>
-      <li>Sodium: 0mg</li>
-    </ul>
-  </div>
+                <button type="submit" class="btn btn-primary w-100 mt-3" onclick="analyzeLabel(event)"><i class="fas fa-camera"></i> Run AI Analysis</button>
+            </form>
+        </div>
 
-  <!-- Visual Bars -->
-  <div class="card p-3">
-    <h5>Nutrient Levels</h5>
-    <div class="mb-2">Calories <span id="caloriesValue"></span></div>
-    <div class="progress"><div id="caloriesBar" class="progress-bar bg-info" role="progressbar" style="width:0%">0%</div></div>
-    <div class="mb-2">Protein <span id="proteinValue"></span></div>
-    <div class="progress"><div id="proteinBar" class="progress-bar bg-success" role="progressbar" style="width:0%">0%</div></div>
-    <div class="mb-2">Fat <span id="fatValue"></span></div>
-    <div class="progress"><div id="fatBar" class="progress-bar bg-danger" role="progressbar" style="width:0%">0%</div></div>
-    <div class="mb-2">Carbs <span id="carbsValue"></span></div>
-    <div class="progress"><div id="carbsBar" class="progress-bar bg-warning" role="progressbar" style="width:0%">0%</div></div>
-    <div class="mb-2">Sugars <span id="sugarValue"></span></div>
-    <div class="progress"><div id="sugarBar" class="progress-bar bg-purple" role="progressbar" style="width:0%">0%</div></div>
-    <div class="mb-2">Sodium <span id="sodiumValue"></span></div>
-    <div class="progress"><div id="sodiumBar" class="progress-bar bg-secondary" role="progressbar" style="width:0%">0%</div></div>
-  </div>
+        <div class="results-card">
+            <h4>2. Analysis Results & Verdict</h4>
+            
+            <div id="loadingStatus" class="alert alert-info text-center" style="display: none;">
+                <i class="fas fa-spinner fa-spin"></i> Analyzing image, please wait...
+            </div>
 
-  <!-- Smart Summary -->
-  <div id="labelResult" class="mt-3"></div>
+            <div id="analysisResults" class="result-section">
+                
+                <p class="text-muted text-center mt-4" id="initialMessage">Upload an image to see the extracted data, nutritional summary, and health verdict here.</p>
+                
+                <div id="dynamicContent" style="display: none;">
+                    <div class="row mt-4">
+                        <div class="col-md-5">
+                            <h5 class="fw-bold">AI Verdict:</h5>
+                            <div id="verdictBox" class="verdict-box verdict-caution">Loading...</div>
+                        </div>
+                        <div class="col-md-7">
+                            <h5 class="fw-bold">AI Suggestion:</h5>
+                            <p id="suggestionText" class="mb-0 small text-muted">Analyzing the overall profile...</p>
+                        </div>
+                    </div>
+
+                    <h4 class="mt-4">Extracted Nutrients:</h4>
+                    <ul id="nutritionList" class="list-group list-group-flush small">
+                        </ul>
+                    
+                    <h4 class="mt-4">Ingredients of Concern/Benefit:</h4>
+                    <ul id="ingredientsList" class="ingredients-list small">
+                         </ul>
+                </div>
+
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
-let currentFacts = {};
-
-document.getElementById("labelImage").addEventListener("change", function(e){
-  const file = e.target.files[0];
-  if(file){
-    const reader = new FileReader();
-    reader.onload = function(evt){
-      const img = document.getElementById("labelPreview");
-      img.src = evt.target.result;
-      img.style.display = "block";
+    // Mock JSON response (Your provided data)
+    const MOCK_API_RESPONSE = {
+        "ingredients_of_concern": [
+            "Whole Oats (Excellent)",
+            "High Fructose Corn Syrup (Caution)",
+            "Soy Lecithin"
+        ],
+        "nutrition_summary": {
+            "Calories": "300 kcal",
+            "Protein": "8g",
+            "Saturated Fat": "3g",
+            "Sodium": "180mg",
+            "Sugar": "15g"
+        },
+        "suggestion": "The overall profile is good, but the **High Fructose Corn Syrup** is a concern. Enjoy in moderation and check serving size!",
+        "verdict": "Good"
     };
-    reader.readAsDataURL(file);
-  }
-});
 
-async function analyzeLabelOCR(){
-  const fileInput = document.getElementById("labelImage");
-  if(!fileInput.files[0]){
-    alert("Please upload a nutrition label image first!");
-    return;
-  }
-  const img = document.getElementById("labelPreview");
-  document.getElementById("labelResult").innerHTML = `<p>Processing OCR, please wait...</p>`;
+    // Function to display the uploaded image immediately
+    function previewImage(event) {
+        const preview = document.getElementById('imagePreview');
+        if (event.target.files && event.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                preview.alt = "Uploaded Food Label";
+                document.getElementById('initialMessage').style.display = 'none';
+            }
+            reader.readAsDataURL(event.target.files[0]);
+        } else {
+            preview.style.display = 'none';
+        }
+    }
+    
+    // Function to set the correct verdict color class
+    function getVerdictClass(verdict) {
+        const lowerVerdict = verdict.toLowerCase();
+        if (lowerVerdict.includes('excellent') || lowerVerdict.includes('good')) {
+            return 'verdict-Good';
+        } else if (lowerVerdict.includes('caution') || lowerVerdict.includes('okay')) {
+            return 'verdict-Caution';
+        } else {
+            return 'verdict-Poor';
+        }
+    }
 
-  const { data: { text } } = await Tesseract.recognize(img.src, 'eng', { logger: m => console.log(m) });
+    /**
+     * ADVANCED FUNCTION: Handles form submission, shows loading, and fetches/displays structured AI results.
+     */
+    async function analyzeLabel(event) {
+        event.preventDefault(); 
+        
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput.files.length === 0) return;
 
-  const getValue = (key) => {
-    const regex = new RegExp(`${key}[:\\s]*([\\d\\.]+)`, "i");
-    const match = text.match(regex);
-    return match ? parseFloat(match[1]) : 0;
-  };
+        const loadingStatus = document.getElementById('loadingStatus');
+        const dynamicContent = document.getElementById('dynamicContent');
+        
+        // 1. Show Loading Status
+        loadingStatus.style.display = 'block';
+        dynamicContent.style.display = 'none';
+        document.getElementById('initialMessage').style.display = 'none';
 
-  const facts = {
-    Calories: getValue("Calories"),
-    Protein: getValue("Protein"),
-    Fat: getValue("Fat"),
-    Carbs: getValue("Carbs"),
-    Sugars: getValue("Sugars"),
-    Sodium: getValue("Sodium")
-  };
-  currentFacts = facts;
+        // 2. Perform Fetch/Mock API Call
+        // In a real app, you would use FormData and fetch to the Flask /analyze endpoint.
+        // const formData = new FormData(document.getElementById('ocrForm'));
+        
+        try {
+            // Mock API response delay for realistic loading effect (3 seconds)
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            
+            // Assume the Flask API returns the structured JSON response
+            const data = MOCK_API_RESPONSE; // Use mock data here
 
-  document.getElementById("nutritionSummary").innerHTML = `
-    <li>Calories: ${facts.Calories}</li>
-    <li>Protein: ${facts.Protein}g</li>
-    <li>Fat: ${facts.Fat}g</li>
-    <li>Carbs: ${facts.Carbs}g</li>
-    <li>Sugars: ${facts.Sugars}g</li>
-    <li>Sodium: ${facts.Sodium}mg</li>
-  `;
+            // 3. Populate Results
+            
+            // Verdict
+            const verdictBox = document.getElementById('verdictBox');
+            verdictBox.textContent = data.verdict;
+            verdictBox.className = 'verdict-box ' + getVerdictClass(data.verdict);
 
-  const updateBar = (barId, value, max=200) => {
-    const percentage = Math.min(100, (value/max)*100);
-    document.getElementById(barId).style.width = percentage + "%";
-    document.getElementById(barId).innerText = value;
-  };
-  updateBar("caloriesBar", facts.Calories, 500);
-  updateBar("proteinBar", facts.Protein, 50);
-  updateBar("fatBar", facts.Fat, 50);
-  updateBar("carbsBar", facts.Carbs, 100);
-  updateBar("sugarBar", facts.Sugars, 50);
-  updateBar("sodiumBar", facts.Sodium, 500);
+            // Suggestion
+            document.getElementById('suggestionText').innerHTML = data.suggestion;
 
-  let rec = "Good";
-  if(facts.Fat>15 || facts.Sugars>20 || facts.Sodium>500) rec="Limit";
-  else if(facts.Fat>7 || facts.Sugars>10 || facts.Sodium>200) rec="Moderate";
+            // Nutrition Summary
+            const nutritionList = document.getElementById('nutritionList');
+            nutritionList.innerHTML = ''; // Clear previous list
+            for (const [key, value] of Object.entries(data.nutrition_summary)) {
+                nutritionList.innerHTML += `<li class="list-group-item"><strong>${key}:</strong> <span>${value}</span></li>`;
+            }
 
-  let explanation = `Calories: ${facts.Calories}, Protein: ${facts.Protein}g, Fat: ${facts.Fat}g. `;
-  explanation += `Sugars: ${facts.Sugars}g, Sodium: ${facts.Sodium}mg. Recommended: ${rec}.`;
+            // Ingredients of Concern/Benefit
+            const ingredientsList = document.getElementById('ingredientsList');
+            ingredientsList.innerHTML = ''; // Clear previous list
+            data.ingredients_of_concern.forEach(item => {
+                let colorClass = '';
+                if (item.includes('(Excellent)')) {
+                    colorClass = 'text-success';
+                } else if (item.includes('(Caution)')) {
+                    colorClass = 'text-warning';
+                }
+                ingredientsList.innerHTML += `<li class="${colorClass}"><i class="fas fa-check-circle"></i> ${item}</li>`;
+            });
 
-  let healthClass = rec=="Good"?"health-green":rec=="Moderate"?"health-orange":"health-red";
 
-  document.getElementById("labelResult").innerHTML = `
-    <div class="card p-3 shadow-sm mt-2">
-      <h5>Smart Nutrition Summary</h5>
-      <p class="${healthClass}">${explanation}</p>
-    </div>
-  `;
-}
+            // 4. Hide Loading and Show Dynamic Content
+            loadingStatus.style.display = 'none';
+            dynamicContent.style.display = 'block';
 
-// Export PDF
-function exportPDF(){
-  if(Object.keys(currentFacts).length === 0){
-    alert("Please analyze a nutrition label first!");
-    return;
-  }
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.setFontSize(18);
-  doc.text("NutriDash Tracker Summary", 20, 20);
-  doc.setFontSize(12);
-  let y = 35;
-  for(const [key, value] of Object.entries(currentFacts)){
-    doc.text(`${key}: ${value}`, 20, y);
-    y += 10;
-  }
-  doc.save("Nutrition_Summary.pdf");
-}
+        } catch (error) {
+            console.error("Analysis failed:", error);
+            loadingStatus.style.display = 'none';
+            document.getElementById('initialMessage').style.display = 'block';
+            document.getElementById('initialMessage').innerHTML = `<p class="text-danger">❌ **Analysis Error:** Could not process the label. Please ensure the image is clear.</p>`;
+        }
+    }
 </script>
 
 </body>

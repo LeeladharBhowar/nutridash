@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriDash - Ultra Advanced User Profile & Goals</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Global & Sidebar Styles */
+        body { 
+            background: #f8f9fa; 
+            font-family: "Segoe UI", Tahoma, sans-serif; 
+            margin: 0; 
+            display: flex; 
+            transition: all 0.3s ease;
+        }
+        .sidebar { 
+            width: 230px; 
+            height: 100vh; 
+            position: fixed; 
+            left: 0; 
+            top: 0; 
+            background: linear-gradient(180deg, #2c3e50, #34495e); 
+            color: white; 
+            padding-top: 20px;
+            box-shadow: 3px 0 15px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        .sidebar h3 { text-align: center; margin-bottom: 30px; font-size: 22px; letter-spacing: 1px; }
+        .sidebar ul { list-style: none; padding: 0; }
+        .sidebar ul li { margin: 15px 0; }
+        .sidebar ul li a { 
+            color: white; 
+            text-decoration: none; 
+            font-size: 16px; 
+            display: flex; 
+            align-items: center; 
+            padding: 10px 20px; 
+            transition: background 0.3s; 
+            border-radius: 8px; 
+        }
+        .sidebar ul li a i { margin-right: 10px; }
+        .sidebar ul li a:hover, .sidebar ul li a.active { background: #1abc9c; box-shadow: 0 0 8px rgba(0,0,0,0.3); }
+        .sidebar .logout { margin-top: 30px; text-align: center; display: block; color: #f8d7da; font-weight: bold; }
+
+        /* Content Layout */
+        .content { 
+            margin-left: 230px; 
+            padding: 30px; 
+            flex: 1; 
+        }
+        h2 { color: #2c3e50; font-weight: 700; margin-bottom: 30px; }
+
+        /* Profile Card Styling */
+        .profile-card {
+            max-width: 900px; 
+            margin: 0 auto;
+            padding: 40px;
+            border-radius: 15px;
+            background-color: white;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .profile-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+        }
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: #1abc9c;
+            color: white;
+            font-size: 3em;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            border: 4px solid #b3e3d9;
+        }
+        
+        /* GENERAL METRICS */
+        .metric-box {
+            background-color: #eaf8ff;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid #3498db;
+            margin-bottom: 15px;
+            height: 100%;
+            transition: all 0.3s ease;
+        }
+        .metric-box:hover {
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+        }
+        .metric-box h5 {
+            font-size: 1.1rem;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        .metric-box p {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1abc9c;
+            margin-bottom: 0;
+        }
+
+        /* ADVANCED TARGETS CARD STYLES */
+        #macroTargetsCard {
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .macro-target-box {
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            height: 100%;
+            transition: all 0.3s ease;
+        }
+        .macro-target-box:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .target-cal { background-color: #fcebeb; color: #e74c3c; border: 1px solid #f9c2c2; }
+        .target-prot { background-color: #e9f7ef; color: #2ecc71; border: 1px solid #b7e8c8; }
+        .target-carb { background-color: #fef7e1; color: #f39c12; border: 1px solid #fdd892; }
+        .target-fat { background-color: #e0f2f1; color: #3498db; border: 1px solid #a2d7d3; }
+
+        .macro-target-box h6 {
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .macro-target-box p {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .action-button {
+            transition: transform 0.2s;
+        }
+        .action-button:hover {
+            transform: translateY(-2px);
+        }
+        
+    </style>
+</head>
+<body onload="fetchProfileData()">
+
+<div class="sidebar">
+  <h3><i class="fas fa-leaf"></i> NutriDash</h3>
+  <ul>
+    <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> Dashboard</a></li>
+    <li><a href="{{ url_for('food_analysis') }}"><i class="fas fa-apple-alt"></i> Food Analysis</a></li>
+    <li><a href="{{ url_for('reports') }}"><i class="fas fa-chart-bar"></i> Reports</a></li>
+    <li><a href="{{ url_for('settings') }}"><i class="fas fa-cog"></i> Settings</a></li>
+    <li><a href="{{ url_for('tracker') }}"><i class="fas fa-utensils"></i> Tracker</a></li>
+    <li><a href="{{ url_for('logout') }}" class="logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+  </ul>
+</div>
+<div class="content">
+    <h2>🎯 Your Account Profile & Targets</h2>
+
+    <div class="profile-card">
+        
+        <div class="profile-header">
+            <div class="profile-avatar"><i class="fas fa-user-astronaut"></i></div>
+            <h3 id="profileUsername" class="mb-0">{{ username }}</h3>
+            <p id="profilePhone" class="text-muted small">Loading Phone...</p>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="metric-box">
+                    <h5>Current Weight</h5>
+                    <p id="currentWeight">-- kg</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="metric-box">
+                    <h5>Health Goal</h5>
+                    <p id="healthGoal">--</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="metric-box">
+                    <h5>Last Updated</h5>
+                    <p id="lastUpdate">N/A</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="macroTargetsCard">
+            <h4 class="mb-4 text-center text-secondary">
+                <i class="fas fa-calculator me-2"></i> Calculated Daily Macros
+            </h4>
+            
+            <div id="targetLoading" class="text-center text-muted">
+                 <i class="fas fa-spinner fa-spin me-2"></i> Calculating targets based on your latest settings...
+            </div>
+
+            <div id="macroTargetGrid" class="row d-none">
+                </div>
+
+            <div class="text-center mt-4">
+                <a href="{{ url_for('settings') }}" class="btn btn-info action-button">
+                    <i class="fas fa-cog"></i> Change Weight/Goal
+                </a>
+                <a href="{{ url_for('reports') }}" class="btn btn-secondary action-button"><i class="fas fa-chart-line"></i> View Trends</a>
+            </div>
+        </div>
+        </div>
+
+</div>
+
+<script>
+    // Access the username passed from Flask (Jinja context)
+    const CURRENT_USER = "{{ username }}"; 
+    
+    // NOTE: In a live app, this mock data should be entirely replaced by your Flask API endpoints.
+
+    /**
+     * Renders the calculated macro targets into the grid.
+     * @param {object} goals - The goals data object fetched from /api/goals/<username>.
+     */
+    function renderMacroTargets(goals) {
+        const grid = document.getElementById('macroTargetGrid');
+        grid.innerHTML = '';
+        
+        // Data structure matching the output of the Flask /api/goals route
+        const targets = [
+            { label: 'Total Calories', value: goals.target_calories, unit: 'kcal', icon: 'fire', class: 'target-cal' },
+            { label: 'Protein', value: goals.target_protein, unit: 'g', icon: 'dumbbell', class: 'target-prot' },
+            { label: 'Carbs', value: goals.target_carbs, unit: 'g', icon: 'bread-slice', class: 'target-carb' },
+            { label: 'Fats', value: goals.target_fat, unit: 'g', icon: 'oil-can', class: 'target-fat' },
+        ];
+
+        targets.forEach(t => {
+            // Format value: Calories get commas (toLocaleString), others get rounded to 0 decimal places.
+            const formattedValue = t.label === 'Total Calories' ? t.value.toLocaleString() : t.value.toFixed(0); 
+
+            const content = `
+                <div class="col-lg-3 col-md-6 col-sm-6 mb-3">
+                    <div class="macro-target-box ${t.class}">
+                        <i class="fas fa-${t.icon} me-1"></i>
+                        <h6>${t.label}</h6>
+                        <p>${formattedValue} ${t.unit}</p>
+                    </div>
+                </div>
+            `;
+            grid.innerHTML += content;
+        });
+    }
+
+    /**
+     * Fetches all user data (basic info + calculated goals) and updates the UI.
+     * This function is run on page load (onload="fetchProfileData()") to ensure real-time data sync.
+     */
+    async function fetchProfileData() {
+        const loadingDiv = document.getElementById('targetLoading');
+        const macroGrid = document.getElementById('macroTargetGrid');
+        
+        loadingDiv.classList.remove('d-none');
+        macroGrid.classList.add('d-none');
+
+        try {
+            // 1. Fetch Profile Data (Requires Flask implementation of /api/user-profile/<username>)
+            const profileResponse = await fetch(`/api/user-profile/${CURRENT_USER}`);
+            if (!profileResponse.ok) throw new Error("Profile fetch failed.");
+            const profileData = await profileResponse.json();
+            
+            // 2. Fetch Calculated Targets (Requires Flask implementation of /api/goals/<username>)
+            const goalsResponse = await fetch(`/api/goals/${CURRENT_USER}`);
+            if (!goalsResponse.ok) throw new Error("Goals fetch failed.");
+            const goalsData = await goalsResponse.json();
+            
+            // 3. Update Basic Profile UI
+            const goalText = profileData.health_goal.charAt(0).toUpperCase() + profileData.health_goal.slice(1).toLowerCase();
+            
+            document.getElementById('profileUsername').textContent = profileData.name;
+            document.getElementById('profilePhone').textContent = profileData.phone;
+            document.getElementById('currentWeight').textContent = `${profileData.weight.toFixed(1)} kg`;
+            document.getElementById('healthGoal').textContent = goalText;
+            document.getElementById('lastUpdate').textContent = profileData.last_updated;
+
+            // Apply Goal Color
+            const goalP = document.getElementById('healthGoal');
+            goalP.style.color = (profileData.health_goal.toLowerCase() === 'gain' ? '#3498db' : 
+                                 profileData.health_goal.toLowerCase() === 'lose' ? '#e74c3c' : '#2ecc71');
+
+            // 4. Render Advanced Macro Targets
+            renderMacroTargets(goalsData);
+            
+            loadingDiv.classList.add('d-none');
+            macroGrid.classList.remove('d-none');
+
+        } catch (error) {
+            console.error("Profile Data Error:", error);
+            // Display friendly error state
+            document.getElementById('targetLoading').textContent = `⚠ Failed to load data. Ensure Flask API is running and you are logged in. (${error.message})`;
+            document.getElementById('targetLoading').classList.add('alert', 'alert-danger');
+            document.getElementById('targetLoading').classList.remove('d-none');
+            macroGrid.classList.add('d-none');
+        }
+    }
+</script>
+
+</body>
+</html>
