@@ -8,149 +8,140 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: hwb(216 60% 6%);
-      margin: 0;
-      display: flex;
-    }
-
+    body { font-family: 'Segoe UI', sans-serif; background: hwb(208 59% 4%); margin:0; display:flex;}
+    
     /* Sidebar */
     .sidebar {
-      width: 230px;
-      height: 100vh;
-      position: fixed;
-      left: 0;
-      top: 0;
-      background: linear-gradient(180deg, #2c3e50, #34495e);
-      color: white;
-      padding-top: 20px;
+      width: 230px; height: 100vh; position: fixed; left: 0; top: 0;
+      background: linear-gradient(180deg, #2c3e50, #34495e); color: white; padding-top: 20px;
     }
-
-    .sidebar h3 {
-      text-align: center;
-      margin-bottom: 30px;
-      font-size: 22px;
-    }
-
-    .sidebar ul {
-      list-style: none;
-      padding: 0;
-    }
-
-    .sidebar ul li {
-      margin: 15px 0;
-    }
-
+    .sidebar h3 { text-align:center; margin-bottom:30px; font-size:22px;}
+    .sidebar ul { list-style:none; padding:0;}
+    .sidebar ul li { margin:15px 0;}
     .sidebar ul li a {
-      color: white;
-      text-decoration: none;
-      font-size: 16px;
-      display: flex;
-      align-items: center;
-      padding: 10px 20px;
-      transition: background 0.3s;
-      border-radius: 8px;
+      color:white; text-decoration:none; font-size:16px; display:flex;
+      align-items:center; padding:10px 20px; border-radius:8px; transition:all 0.3s ease;
     }
-
-    .sidebar ul li a i {
-      margin-right: 10px;
-    }
-
-    .sidebar ul li a:hover,
-    .sidebar ul li a.active {
-      background: #1abc9c;
-    }
-
-    .sidebar .logout {
-      margin-top: 30px;
-      text-align: center;
-      display: block;
-      color: #f8d7da;
-    }
+    .sidebar ul li a i { margin-right:10px;}
+    .sidebar ul li a:hover, .sidebar ul li a.active { background:#1abc9c; }
+    .sidebar .logout { margin-top:30px; text-align:center; color:#f8d7da; display:block; }
 
     /* Content */
-    .content {
-      margin-left: 230px;
-      padding: 30px;
-      flex: 1;
-    }
-
-    .card { border-radius: 12px; }
+    .content { margin-left:230px; padding:30px; flex:1; }
+    .card { border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); padding:20px; margin-bottom:20px; background:white; }
+    #mealHistory { max-height:300px; overflow-y:auto; }
+    #mealHistory table th, #mealHistory table td { text-align:center; font-size:14px; }
   </style>
 </head>
 <body>
 
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <h3><i class="fas fa-leaf"></i> NutriDash</h3>
-    <ul>
-      <li><a href="/dashboard" class="{% if request.path == '/dashboard' %}active{% endif %}"><i class="fas fa-home"></i> Dashboard</a></li>
-      <li><a href="/food-analysis" class="{% if request.path == '/food-analysis' %}active{% endif %}"><i class="fas fa-apple-alt"></i> Food Analysis</a></li>
-      <li><a href="/reports" class="{% if request.path == '/reports' %}active{% endif %}"><i class="fas fa-chart-bar"></i> Reports</a></li>
-      <li><a href="/settings" class="{% if request.path == '/settings' %}active{% endif %}"><i class="fas fa-cog"></i> Settings</a></li>
-      <li><a href="/logout" class="logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-    </ul>
+<div class="sidebar">
+  <h3><i class="fas fa-leaf"></i> NutriDash</h3>
+  <ul>
+    <li><a href="/dashboard"><i class="fas fa-home"></i> Dashboard</a></li>
+    <li><a href="/food-analysis"><i class="fas fa-apple-alt"></i> Food Analysis</a></li>
+    <li><a href="/reports" class="active"><i class="fas fa-chart-bar"></i> Reports</a></li>
+    <li><a href="/settings"><i class="fas fa-cog"></i> Settings</a></li>
+    <li><a href="/tracker"><i class="fas fa-utensils"></i> Tracker</a></li>
+    <li><a href="/logout" class="logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+  </ul>
+</div>
+
+<div class="content">
+  <h2>📊 Nutrition Reports</h2>
+
+  <!-- Summary Cards -->
+  <div class="row">
+    <div class="col-md-4"><div class="card"><h5>Total Calories</h5><h3 id="totalCalories">0</h3></div></div>
+    <div class="col-md-4"><div class="card"><h5>Total Protein (g)</h5><h3 id="totalProtein">0</h3></div></div>
+    <div class="col-md-4"><div class="card"><h5>Total Carbs (g)</h5><h3 id="totalCarbs">0</h3></div></div>
   </div>
 
-  <!-- Content -->
-  <div class="content">
-    <h2>📊 Reports for {{ username }}</h2>
+  <div class="row mt-3">
+    <div class="col-md-4"><div class="card"><h5>Total Fat (g)</h5><h3 id="totalFat">0</h3></div></div>
+    <div class="col-md-4"><div class="card"><h5>Total Sugar (g)</h5><h3 id="totalSugar">0</h3></div></div>
+    <div class="col-md-4"><div class="card"><h5>Total Fiber (g)</h5><h3 id="totalFiber">0</h3></div></div>
+  </div>
 
-    <div class="row mt-4">
-      <div class="col-md-6">
-        <div class="card p-4">
-          <h5>Total Foods</h5>
-          <h3>{{ foods|length }}</h3>
-        </div>
-      </div>
-      <div class="col-md-6">
-        <div class="card p-4">
-          <h5>Healthy vs Junk</h5>
-          <h3>
-            Healthy: {{ foods|selectattr("type","equalto","healthy")|list|length }} |
-            Junk: {{ foods|selectattr("type","equalto","junk")|list|length }}
-          </h3>
-        </div>
-      </div>
-    </div>
+  <!-- Nutrition Chart -->
+  <div class="card mt-4">
+    <h5>Nutrition Breakdown</h5>
+    <canvas id="nutritionChart" height="150"></canvas>
+  </div>
 
-    <div class="row mt-4">
-      <div class="col-md-12">
-        <div class="card p-4">
-          <h5>Calories by Type</h5>
-          <canvas id="caloriesChart" height="150"></canvas>
-        </div>
-      </div>
+  <!-- Meal History -->
+  <div class="card mt-4">
+    <h5>Meal History</h5>
+    <div id="mealHistory" class="table-responsive">
+      <table class="table table-bordered">
+        <thead class="table-dark">
+          <tr>
+            <th>#</th><th>Date & Time</th><th>Calories</th><th>Protein</th><th>Carbs</th>
+            <th>Fat</th><th>Sugar</th><th>Fiber</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody"></tbody>
+      </table>
     </div>
   </div>
+</div>
 
 <script>
-  const caloriesData = {
-    labels: ['Healthy', 'Junk', 'Dairy', 'Frozen/Packed'],
-    datasets: [{
-      label: 'Total Calories',
-      data: [
-        {{ foods|selectattr("type","equalto","healthy")|map(attribute="calories")|sum | tojson }},
-        {{ foods|selectattr("type","equalto","junk")|map(attribute="calories")|sum | tojson }},
-        {{ foods|selectattr("type","equalto","dairy")|map(attribute="calories")|sum | tojson }},
-        {{ foods|selectattr("type","equalto","frozen")|map(attribute="calories")|sum | tojson }}
-      ],
-      backgroundColor: ['#27ae60', '#e74c3c', '#f39c12', '#3498db']
-    }]
-  };
+  function loadReports() {
+    const meals = JSON.parse(localStorage.getItem('savedMeals') || '[]');
 
-  const config = {
-    type: 'bar',
-    data: caloriesData,
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true } }
-    }
-  };
+    // Totals
+    let totals = { calories:0, protein:0, carbs:0, fat:0, sugar:0, fiber:0 };
+    meals.forEach(m => {
+      totals.calories += m.nutrition.calories;
+      totals.protein += m.nutrition.protein;
+      totals.carbs += m.nutrition.carbs;
+      totals.fat += m.nutrition.fat;
+      totals.sugar += m.nutrition.sugar;
+      totals.fiber += m.nutrition.fiber;
+    });
 
-  new Chart(document.getElementById('caloriesChart'), config);
+    document.getElementById('totalCalories').textContent = totals.calories;
+    document.getElementById('totalProtein').textContent = totals.protein;
+    document.getElementById('totalCarbs').textContent = totals.carbs;
+    document.getElementById('totalFat').textContent = totals.fat;
+    document.getElementById('totalSugar').textContent = totals.sugar;
+    document.getElementById('totalFiber').textContent = totals.fiber;
+
+    // Chart
+    const ctx = document.getElementById('nutritionChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Calories','Protein','Carbs','Fat','Sugar','Fiber'],
+        datasets:[{
+          label:'Total Nutrition',
+          data:[totals.calories, totals.protein, totals.carbs, totals.fat, totals.sugar, totals.fiber],
+          backgroundColor:['#1abc9c','#3498db','#f39c12','#e74c3c','#9b59b6','#2ecc71']
+        }]
+      },
+      options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+    });
+
+    // Meal history table
+    const tbody = document.getElementById('historyBody');
+    tbody.innerHTML = '';
+    meals.forEach((m,i) => {
+      tbody.innerHTML += `<tr>
+        <td>${i+1}</td>
+        <td>${m.timestamp}</td>
+        <td>${m.nutrition.calories}</td>
+        <td>${m.nutrition.protein}</td>
+        <td>${m.nutrition.carbs}</td>
+        <td>${m.nutrition.fat}</td>
+        <td>${m.nutrition.sugar}</td>
+        <td>${m.nutrition.fiber}</td>
+      </tr>`;
+    });
+  }
+
+  window.onload = loadReports;
 </script>
+
 </body>
 </html>

@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>NutriDash - Login</title>
     <style>
-        /* Global */
         body {
             font-family: "Segoe UI", Tahoma, sans-serif;
             margin: 0;
@@ -12,7 +11,6 @@
             background: #f8f9fa;
         }
 
-        /* Login Page */
         body.login-page {
             display: flex;
             justify-content: center;
@@ -23,7 +21,6 @@
             background-size: cover;
         }
 
-        /* Login Container */
         .login-container {
             background: white;
             padding: 40px 30px;
@@ -33,13 +30,11 @@
             text-align: center;
         }
 
-        /* Heading */
         .login-container h2 {
             margin-bottom: 25px;
             color: #28a745;
         }
 
-        /* Input Fields */
         .login-container input[type="text"],
         .login-container input[type="password"] {
             width: 100%;
@@ -51,7 +46,6 @@
             box-sizing: border-box;
         }
 
-        /* Login Button */
         .login-container button {
             width: 100%;
             padding: 12px;
@@ -70,12 +64,28 @@
             background-color: #218838;
         }
 
-        /* Placeholder Text */
         .login-container input::placeholder {
             color: #999;
         }
 
-        /* Responsive */
+        /* Password strength list */
+        .password-requirements {
+            text-align: left;
+            font-size: 0.85rem;
+            margin-top: 5px;
+            margin-bottom: 10px;
+        }
+
+        .password-requirements li {
+            color: #999;
+            margin-bottom: 3px;
+        }
+
+        .password-requirements li.valid {
+            color: green;
+            font-weight: bold;
+        }
+
         @media (max-width: 400px) {
             .login-container {
                 width: 90%;
@@ -90,26 +100,79 @@
         <form id="loginForm">
             <input type="text" id="phone" placeholder="Phone Number" required>
             <input type="password" id="password" placeholder="Password" required>
+            
+            <ul class="password-requirements">
+                <li id="length">Minimum 8 characters</li>
+                <li id="uppercase">At least 1 uppercase letter</li>
+                <li id="lowercase">At least 1 lowercase letter</li>
+                <li id="number">At least 1 number</li>
+                <li id="special">At least 1 special character (@$!%*?&)</li>
+            </ul>
+            
             <button type="submit">Login</button>
         </form>
     </div>
 
     <script>
+        const passwordInput = document.getElementById("password");
+        const requirements = {
+            length: document.getElementById("length"),
+            uppercase: document.getElementById("uppercase"),
+            lowercase: document.getElementById("lowercase"),
+            number: document.getElementById("number"),
+            special: document.getElementById("special")
+        };
+
+        function validatePassword(password) {
+            // Regex checks
+            const rules = {
+                length: password.length >= 8,
+                uppercase: /[A-Z]/.test(password),
+                lowercase: /[a-z]/.test(password),
+                number: /\d/.test(password),
+                special: /[@$!%*?&]/.test(password)
+            };
+
+            // Update UI
+            for (const rule in rules) {
+                if (rules[rule]) {
+                    requirements[rule].classList.add("valid");
+                } else {
+                    requirements[rule].classList.remove("valid");
+                }
+            }
+
+            // Return true if all are valid
+            return Object.values(rules).every(Boolean);
+        }
+
+        passwordInput.addEventListener("input", () => {
+            validatePassword(passwordInput.value);
+        });
+
         document.getElementById("loginForm").addEventListener("submit", async e => {
             e.preventDefault();
+            const password = passwordInput.value;
+
+            if (!validatePassword(password)) {
+                alert("Please enter a strong password following all requirements.");
+                return;
+            }
+
             const res = await fetch("/login", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({
                     phone: document.getElementById("phone").value,
-                    password: document.getElementById("password").value
+                    password: password
                 })
             });
+
             const data = await res.json();
             if (data.success) {
-                window.location.href = "/dashboard";  // redirect on successful login
+                window.location.href = "/dashboard";
             } else {
-                alert(data.message);  // will only trigger if no phone/password entered
+                alert(data.message);
             }
         });
     </script>

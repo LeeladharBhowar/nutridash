@@ -24,8 +24,9 @@
     .tab.active { color: #28a745; border-bottom: 3px solid #28a745; }
     .auth-container h2 { margin-bottom: 20px; color: #28a745; }
     .auth-container input {
-      width: 100%; padding: 12px 15px; margin: 10px 0;
+      width: 100%; padding: 12px 40px 12px 15px; margin: 10px 0;
       border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; box-sizing: border-box;
+      position: relative;
     }
     .auth-container button {
       width: 100%; padding: 12px; margin-top: 15px;
@@ -36,6 +37,20 @@
     .auth-container button:hover { background-color: #218838; }
     .form { display: none; animation: fade 0.3s ease-in-out; }
     .form.active { display: block; }
+
+    /* Password strength checklist */
+    .password-requirements { text-align: left; font-size: 0.85rem; margin-top: 5px; margin-bottom: 10px; }
+    .password-requirements li { color: #999; margin-bottom: 3px; }
+    .password-requirements li.valid { color: green; font-weight: bold; }
+
+    /* Eye icon for toggle */
+    .password-wrapper { position: relative; }
+    .toggle-password {
+      position: absolute; right: 12px; top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer; font-size: 1.1rem; color: #666;
+    }
+
     @keyframes fade { from { opacity:0; transform:translateY(10px);} to { opacity:1; transform:translateY(0);} }
   </style>
 </head>
@@ -51,7 +66,19 @@
       <h2>Create Account</h2>
       <input type="text" id="regName" placeholder="Full Name" required>
       <input type="tel" id="regPhone" placeholder="Phone Number" required>
-      <input type="password" id="regPassword" placeholder="Password" required>
+      <div class="password-wrapper">
+        <input type="password" id="regPassword" placeholder="Password" required>
+        <span class="toggle-password" data-target="regPassword">&#128065;</span>
+      </div>
+
+      <ul class="password-requirements">
+        <li id="length">Minimum 8 characters</li>
+        <li id="uppercase">At least 1 uppercase letter</li>
+        <li id="lowercase">At least 1 lowercase letter</li>
+        <li id="number">At least 1 number</li>
+        <li id="special">At least 1 special character (@$!%*?&)</li>
+      </ul>
+
       <button type="submit">Register</button>
     </form>
 
@@ -59,15 +86,18 @@
     <form id="loginForm" class="form">
       <h2>Login to NutriDash</h2>
       <input type="tel" id="loginPhone" placeholder="Phone Number" required>
-      <input type="password" id="loginPassword" placeholder="Password" required>
+      <div class="password-wrapper">
+        <input type="password" id="loginPassword" placeholder="Password" required>
+        <span class="toggle-password" data-target="loginPassword">&#128065;</span>
+      </div>
       <button type="submit">Login</button>
     </form>
   </div>
 
 <script>
+  // Tabs
   const tabs = document.querySelectorAll(".tab");
   const forms = document.querySelectorAll(".form");
-
   tabs.forEach(tab => {
     tab.addEventListener("click", () => {
       tabs.forEach(t => t.classList.remove("active"));
@@ -77,22 +107,61 @@
     });
   });
 
+  // Password toggle
+  document.querySelectorAll(".toggle-password").forEach(icon => {
+    icon.addEventListener("click", () => {
+      const input = document.getElementById(icon.dataset.target);
+      if(input.type === "password") input.type = "text";
+      else input.type = "password";
+    });
+  });
+
+  // Password strength
+  const passwordInput = document.getElementById("regPassword");
+  const requirements = {
+      length: document.getElementById("length"),
+      uppercase: document.getElementById("uppercase"),
+      lowercase: document.getElementById("lowercase"),
+      number: document.getElementById("number"),
+      special: document.getElementById("special")
+  };
+  function validatePassword(password) {
+      const rules = {
+          length: password.length >= 8,
+          uppercase: /[A-Z]/.test(password),
+          lowercase: /[a-z]/.test(password),
+          number: /\d/.test(password),
+          special: /[@$!%*?&]/.test(password)
+      };
+      for (const rule in rules) {
+          if (rules[rule]) requirements[rule].classList.add("valid");
+          else requirements[rule].classList.remove("valid");
+      }
+      return Object.values(rules).every(Boolean);
+  }
+  passwordInput.addEventListener("input", () => validatePassword(passwordInput.value));
+
   // Register
   document.getElementById("registerForm").addEventListener("submit", async e => {
     e.preventDefault();
+    const password = passwordInput.value;
+    if(!validatePassword(password)) {
+      alert("Please enter a strong password following all requirements.");
+      return;
+    }
     const res = await fetch("/register", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
         name: document.getElementById("regName").value,
         phone: document.getElementById("regPhone").value,
-        password: document.getElementById("regPassword").value
+        password: password
       })
     });
     const data = await res.json();
     if (data.success) {
       alert("Registration successful! Please login.");
-      tabs[1].click(); // Switch to login tab
+      tabs[1].click();
     } else alert(data.message);
   });
 
