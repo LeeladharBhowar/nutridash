@@ -1,215 +1,305 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NutriDash - Advanced OCR Analysis</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <style>
-    /* -------------------------------------- */
-    /* 1. Base and Sidebar Styles (Copied from Tracker) */
-    /* -------------------------------------- */
-    body { 
-        background: hwb(208 59% 4%); 
-        font-family: "Segoe UI", Tahoma, sans-serif; 
-        margin: 0; 
-        display: flex; 
-        transition: all 0.3s ease;
-    }
-    .sidebar {
-      width: 230px; height: 100vh; position: fixed; left: 0; top: 0;
-      background: linear-gradient(180deg, #2c3e50, #34495e); color: white; padding-top: 20px; box-shadow: 3px 0 15px rgba(0,0,0,0.1);
-    }
-    .sidebar h3 { text-align: center; margin-bottom: 30px; font-size: 22px; letter-spacing: 1px;}
-    .sidebar ul { list-style: none; padding: 0; }
-    .sidebar ul li { margin: 15px 0; }
-    .sidebar ul li a {
-      color: white; text-decoration: none; font-size: 16px; display: flex;
-      align-items: center; padding: 10px 20px; transition: all 0.3s ease; border-radius: 8px;
-    }
-    .sidebar ul li a i { margin-right: 10px; }
-    .sidebar ul li a:hover, .sidebar ul li a.active { background: #1abc9c; box-shadow: 0 2px 8px rgba(0,0,0,0.2);}
-    .sidebar .logout { margin-top: 30px; text-align: center; display: block; color: #f8d7da; font-weight: bold;}
-
-    /* -------------------------------------- */
-    /* 2. Content and Card Styles */
-    /* -------------------------------------- */
-    .content { margin-left: 230px; padding: 30px; flex: 1; }
-    h2 { margin-bottom: 30px; color: #2c3e50; }
-    .btn-primary { background-color: #1abc9c; border-color: #1abc9c; transition: background-color 0.2s; }
-    .btn-primary:hover { background-color: #16a085; border-color: #16a085; }
-
-    /* ADVANCED Layout */
-    .analysis-grid {
-        display: flex;
-        gap: 25px;
-    }
-    .upload-card, .results-card {
-        background-color: white;
-        border-radius: 12px;
-        padding: 25px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-    }
-    .upload-card {
-        flex: 1; /* Takes primary upload space */
-        min-width: 350px;
-    }
-    .results-card {
-        flex: 2; /* Takes more space for results */
-        min-width: 500px;
-    }
-
-    /* Image Preview */
-    #imagePreview {
-        max-width: 100%;
-        max-height: 250px;
-        width: auto;
-        height: auto;
-        display: block;
-        margin: 15px auto;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        border: 2px dashed #ddd;
-        object-fit: contain;
-    }
-
-    /* Result Section Styling (To mimic AI output) */
-    .result-section h4 {
-        color: #34495e;
-        border-bottom: 1px solid #eee;
-        padding-bottom: 5px;
-        margin-top: 20px;
-        font-weight: 600;
-    }
-    .verdict-box {
-        padding: 10px;
-        border-radius: 8px;
-        text-align: center;
-        font-weight: bold;
-        font-size: 1.2em;
-        transition: all 0.3s ease;
-    }
-    .verdict-Excellent, .verdict-Good { background-color: #d4edda; color: #155724; }
-    .verdict-Caution, .verdict-Okay { background-color: #fff3cd; color: #856404; }
-    .verdict-Poor, .verdict-Bad, .verdict-Error { background-color: #f8d7da; color: #721c24; }
-
-    /* Ingredients List Styling */
-    .ingredients-list {
-        list-style: none;
-        padding-left: 0;
-    }
-    .ingredients-list li {
-        margin-bottom: 5px;
-        padding: 5px;
-        border-bottom: 1px dotted #eee;
-    }
-
-
-    /* Media Queries for Responsiveness */
-    @media (max-width: 1000px) {
-        .analysis-grid {
-            flex-direction: column;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriDash - Food Label Analysis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Theme Variables */
+        :root {
+            --bg-color: #f4f6f9;
+            --text-color: #333;
+            --card-bg: #ffffff;
+            --sidebar-bg: linear-gradient(180deg, #2c3e50, #34495e);
+            --primary-color: #1abc9c; /* Green/Teal */
+            --danger-color: #e74c3c;
+            --info-color: #3498db;
+            --accent-color: #e0f2f1; /* Light primary background */
+            --loading-color: #3498db;
         }
-    }
-    @media (max-width: 768px) {
-        .sidebar { width: 100%; height: auto; position: relative; }
-        .content { margin-left: 0; padding: 20px; }
-        .upload-card, .results-card { min-width: auto; }
-    }
-  </style>
+
+        /* Dark Mode (2x Advanced CSS Style) */
+        body.dark {
+            --bg-color: #121212;
+            --text-color: #f1f1f1;
+            --card-bg: #1e1e1e;
+            --sidebar-bg: linear-gradient(180deg, #1e1e1e, #333);
+            --primary-color: #2ecc71; /* Brighter green for dark mode */
+            --danger-color: #e74c3c;
+            --info-color: #5dade2;
+            --accent-color: #1a3424; /* Dark primary background */
+            --loading-color: #5dade2;
+        }
+
+        /* -------------------------------------- */
+        /* 1. Base and Sidebar Styles */
+        /* -------------------------------------- */
+        body { 
+            background: var(--bg-color); 
+            font-family: "Segoe UI", Tahoma, sans-serif; 
+            margin: 0; 
+            display: flex; 
+            color: var(--text-color);
+            transition: all 0.5s ease;
+        }
+        .sidebar {
+            width: 230px; height: 100vh; position: fixed; left: 0; top: 0;
+            background: var(--sidebar-bg); color: white; padding-top: 20px; box-shadow: 3px 0 15px rgba(0,0,0,0.25);
+            display: flex; flex-direction: column;
+        }
+        .sidebar h3 { text-align: center; margin-bottom: 30px; font-size: 22px; letter-spacing: 1px;}
+        .sidebar ul { list-style: none; padding: 0; flex-grow: 1;}
+        .sidebar ul li { margin: 15px 0; }
+        .sidebar ul li a {
+            color: white; text-decoration: none; font-size: 16px; display: flex;
+            align-items: center; padding: 10px 20px; transition: all 0.3s ease; border-radius: 8px;
+        }
+        .sidebar ul li a i { margin-right: 10px; }
+        .sidebar ul li a:hover, .sidebar ul li a.active { 
+            background: var(--primary-color); 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transform: translateX(5px);
+        }
+        .sidebar .logout { margin-top: 30px; text-align: center; display: block; color: var(--danger-color); font-weight: bold;}
+
+        /* Theme Toggle (New Feature CSS) */
+        .theme-toggle-container {
+            padding: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+        .theme-toggle-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.3s, color 0.3s;
+        }
+        .theme-toggle-btn:hover {
+            background: var(--primary-color);
+        }
+
+        /* -------------------------------------- */
+        /* 2. Content and Card Styles */
+        /* -------------------------------------- */
+        .content { margin-left: 230px; padding: 30px; flex: 1; }
+        h2 { margin-bottom: 30px; color: var(--text-color); }
+        
+        /* Advanced Button Styling */
+        .btn-primary { 
+            background-color: var(--primary-color); 
+            border-color: var(--primary-color); 
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover { 
+            background-color: color-mix(in srgb, var(--primary-color) 80%, black); 
+            border-color: color-mix(in srgb, var(--primary-color) 80%, black);
+            box-shadow: 0 4px 12px rgba(0, 188, 155, 0.4); /* Custom shadow */
+            transform: translateY(-2px) scale(1.02);
+        }
+        .form-control {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid color-mix(in srgb, var(--text-color) 20%, transparent);
+            transition: all 0.3s;
+        }
+        
+        /* ADVANCED Layout & Card Styles */
+        .analysis-grid {
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap; 
+        }
+        .upload-card, .results-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 30px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1); 
+            transition: all 0.3s ease;
+            height: fit-content;
+        }
+        .upload-card:hover, .results-card:hover {
+             box-shadow: 0 12px 30px rgba(0,0,0,0.15); /* Lift effect on hover */
+        }
+        .upload-card {
+            flex: 1; 
+            min-width: 350px;
+            border: 2px solid var(--primary-color);
+            background: linear-gradient(145deg, var(--card-bg), var(--accent-color)); /* Subtle Gradient */
+        }
+        .results-card {
+            flex: 2; 
+            min-width: 500px;
+            display: block; /* Always visible to explain the process */
+        }
+
+        /* Image Preview */
+        #imagePreview {
+            max-width: 100%;
+            max-height: 250px;
+            width: auto;
+            height: auto;
+            display: block;
+            margin: 15px auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 3px dashed var(--info-color); 
+            object-fit: contain;
+            transition: all 0.3s ease;
+        }
+
+        /* Progress Steps (New Feature CSS) */
+        .progress-steps {
+            list-style: none;
+            padding: 0;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        .progress-steps li {
+            position: relative;
+            padding-left: 30px;
+            margin-bottom: 15px;
+            border-left: 2px solid var(--primary-color);
+        }
+        .progress-steps li:last-child {
+            border-left: none;
+            margin-bottom: 0;
+        }
+        .progress-steps li::before {
+            content: counter(step);
+            counter-increment: step;
+            position: absolute;
+            left: -12px;
+            top: 0;
+            width: 24px;
+            height: 24px;
+            line-height: 24px;
+            text-align: center;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 0 0 5px var(--bg-color);
+        }
+        .progress-steps li strong {
+            color: var(--info-color);
+            display: block;
+        }
+
+        /* Loading/Status Styling */
+        #loadingStatus {
+            background-color: color-mix(in srgb, var(--loading-color) 10%, white);
+            color: var(--loading-color);
+            border-left: 5px solid var(--loading-color);
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 15px;
+        }
+        
+        /* Media Queries for Responsiveness */
+        @media (max-width: 1000px) {
+            .analysis-grid {
+                flex-direction: column;
+            }
+            .upload-card, .results-card { 
+                min-width: auto; 
+                flex: 1 1 100%;
+            }
+        }
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; height: auto; position: relative; }
+            .content { margin-left: 0; padding: 20px; }
+        }
+    </style>
 </head>
-<body>
+<body class="{{ 'dark' if session.get('theme') == 'dark' else 'light' }}">
 
 <div class="sidebar">
-  <h3><i class="fas fa-leaf"></i> NutriDash</h3>
-  <ul>
-    <li><a href="/dashboard"><i class="fas fa-home"></i> Dashboard</a></li>
-    <li><a href="/food-analysis" class="active"><i class="fas fa-apple-alt"></i> Food Analysis</a></li>
-    <li><a href="/reports"><i class="fas fa-chart-bar"></i> Reports</a></li>
-    <li><a href="/settings"><i class="fas fa-cog"></i> Settings</a></li>
-    <li><a href="/tracker"><i class="fas fa-utensils"></i> Tracker</a></li>
-    <li><a href="/logout" class="logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-  </ul>
+    <div>
+        <h3><i class="fas fa-leaf"></i> NutriDash</h3>
+        <ul>
+            <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="{{ url_for('food_analysis') }}" class="active"><i class="fas fa-apple-alt"></i> Food Analysis</a></li>
+            <li><a href="{{ url_for('reports') }}"><i class="fas fa-chart-bar"></i> Reports</a></li>
+            <li><a href="{{ url_for('settings') }}"><i class="fas fa-cog"></i> Settings</a></li>
+            <li><a href="{{ url_for('tracker') }}"><i class="fas fa-utensils"></i> Tracker</a></li>
+        </ul>
+    </div>
+
+    <div class="theme-toggle-container">
+        <button class="theme-toggle-btn" onclick="toggleTheme()">
+            <i class="fas fa-sun"></i> / <i class="fas fa-moon"></i> Toggle Theme
+        </button>
+    </div>
+
+    <a href="{{ url_for('logout') }}" class="logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
 </div>
+
 <div class="content">
-    <h2>📸 Food Label AI Analysis (OCR)</h2>
-    <p class="text-muted">Use multimodal AI to extract nutrition facts and ingredients directly from a label image for instant analysis and risk assessment.</p>
+    <h2>🚀 AI Food Label Analyzer</h2>
+    <p class="text-muted">Upload an image of a nutrition label for a **comprehensive, AI-powered health analysis**, including **all key nutrients** and **ingredient risk assessment**.</p>
 
     <div class="analysis-grid">
         
         <div class="upload-card">
-            <h4>1. Upload Label & Preview</h4>
-            <p class="text-muted small">Ensure the image is clear and the text is legible for accurate OCR extraction.</p>
+            <h4>1. Upload Label & Preview <i class="fas fa-image text-muted"></i></h4>
+            <p class="text-muted small">Upload a clear image of the nutrition panel and/or ingredient list.</p>
             
-            <form id="ocrForm" enctype="multipart/form-data">
+            <form id="ocrForm" method="POST" action="{{ url_for('analyze') }}" enctype="multipart/form-data">
                 <div class="mb-3">
                     <label for="fileInput" class="form-label fw-bold">Select Label Image (.jpg, .png)</label>
                     <input class="form-control" type="file" id="fileInput" name="file" accept="image/*" onchange="previewImage(event)" required>
                 </div>
                 
                 <img id="imagePreview" src="#" alt="Image Preview" style="display:none;">
+                
+                <div id="loadingStatus" class="alert alert-info text-center" style="display: none;">
+                    <i class="fas fa-spinner fa-spin"></i> Initializing Analysis...
+                </div>
 
-                <button type="submit" class="btn btn-primary w-100 mt-3" onclick="analyzeLabel(event)"><i class="fas fa-camera"></i> Run AI Analysis</button>
+                <button type="submit" class="btn btn-primary w-100 mt-3"><i class="fas fa-robot"></i> Start AI Analysis</button>
             </form>
         </div>
 
         <div class="results-card">
-            <h4>2. Analysis Results & Verdict</h4>
+            <h4>2. Advanced Analysis Flow <i class="fas fa-microchip text-muted"></i></h4>
             
-            <div id="loadingStatus" class="alert alert-info text-center" style="display: none;">
-                <i class="fas fa-spinner fa-spin"></i> Analyzing image, please wait...
-            </div>
-
-            <div id="analysisResults" class="result-section">
-                
-                <p class="text-muted text-center mt-4" id="initialMessage">Upload an image to see the extracted data, nutritional summary, and health verdict here.</p>
-                
-                <div id="dynamicContent" style="display: none;">
-                    <div class="row mt-4">
-                        <div class="col-md-5">
-                            <h5 class="fw-bold">AI Verdict:</h5>
-                            <div id="verdictBox" class="verdict-box verdict-caution">Loading...</div>
-                        </div>
-                        <div class="col-md-7">
-                            <h5 class="fw-bold">AI Suggestion:</h5>
-                            <p id="suggestionText" class="mb-0 small text-muted">Analyzing the overall profile...</p>
-                        </div>
-                    </div>
-
-                    <h4 class="mt-4">Extracted Nutrients:</h4>
-                    <ul id="nutritionList" class="list-group list-group-flush small">
-                        </ul>
-                    
-                    <h4 class="mt-4">Ingredients of Concern/Benefit:</h4>
-                    <ul id="ingredientsList" class="ingredients-list small">
-                         </ul>
-                </div>
-
+            <p class="text-muted mt-2">
+                This process uses Google's Gemini multimodal AI to deliver accurate, detailed results.
+            </p>
+            
+            <div class="result-section">
+                <ul class="progress-steps">
+                    <li>
+                        <strong>Image Acquisition & Validation:</strong>
+                        <p class="small text-muted mb-0">The image is secured, validated for format, and prepared for the AI model.</p>
+                    </li>
+                    <li>
+                        <strong>Gemini Macro Extraction (Comprehensive):</strong>
+                        <p class="small text-muted mb-0">AI extracts **Energy, Fats, Carbs, Sugars (Total & Added), Protein, Fiber, Cholesterol, and Sodium** using a structured JSON output.</p>
+                    </li>
+                    <li>
+                        <strong>Ingredient Risk Assessment:</strong>
+                        <p class="small text-muted mb-0">A separate AI call analyzes the **ingredient list** for potentially risky items (e.g., trans fats, excessive additives).</p>
+                    </li>
+                    <li>
+                        <strong>Health Score & Recommendation:</strong>
+                        <p class="small text-muted mb-0">A weighted score (0-100) is calculated based on nutrient quality, and a personalized suggestion is generated.</p>
+                    </li>
+                </ul>
+                <p class="text-muted small mt-4">
+                    **Note:** The results will appear instantly on the next screen once the analysis completes.
+                </p>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // Mock JSON response (Your provided data)
-    const MOCK_API_RESPONSE = {
-        "ingredients_of_concern": [
-            "Whole Oats (Excellent)",
-            "High Fructose Corn Syrup (Caution)",
-            "Soy Lecithin"
-        ],
-        "nutrition_summary": {
-            "Calories": "300 kcal",
-            "Protein": "8g",
-            "Saturated Fat": "3g",
-            "Sodium": "180mg",
-            "Sugar": "15g"
-        },
-        "suggestion": "The overall profile is good, but the **High Fructose Corn Syrup** is a concern. Enjoy in moderation and check serving size!",
-        "verdict": "Good"
-    };
-
     // Function to display the uploaded image immediately
     function previewImage(event) {
         const preview = document.getElementById('imagePreview');
@@ -219,7 +309,6 @@
                 preview.src = e.target.result;
                 preview.style.display = 'block';
                 preview.alt = "Uploaded Food Label";
-                document.getElementById('initialMessage').style.display = 'none';
             }
             reader.readAsDataURL(event.target.files[0]);
         } else {
@@ -227,88 +316,42 @@
         }
     }
     
-    // Function to set the correct verdict color class
-    function getVerdictClass(verdict) {
-        const lowerVerdict = verdict.toLowerCase();
-        if (lowerVerdict.includes('excellent') || lowerVerdict.includes('good')) {
-            return 'verdict-Good';
-        } else if (lowerVerdict.includes('caution') || lowerVerdict.includes('okay')) {
-            return 'verdict-Caution';
-        } else {
-            return 'verdict-Poor';
-        }
-    }
-
-    /**
-     * ADVANCED FUNCTION: Handles form submission, shows loading, and fetches/displays structured AI results.
-     */
-    async function analyzeLabel(event) {
-        event.preventDefault(); 
+    // Theme Toggle Function (New Feature Logic)
+    function toggleTheme() {
+        const body = document.body;
+        const newTheme = body.classList.contains('dark') ? 'light' : 'dark';
         
-        const fileInput = document.getElementById('fileInput');
-        if (fileInput.files.length === 0) return;
+        body.classList.remove('dark', 'light');
+        body.classList.add(newTheme);
 
-        const loadingStatus = document.getElementById('loadingStatus');
-        const dynamicContent = document.getElementById('dynamicContent');
-        
-        // 1. Show Loading Status
-        loadingStatus.style.display = 'block';
-        dynamicContent.style.display = 'none';
-        document.getElementById('initialMessage').style.display = 'none';
-
-        // 2. Perform Fetch/Mock API Call
-        // In a real app, you would use FormData and fetch to the Flask /analyze endpoint.
-        // const formData = new FormData(document.getElementById('ocrForm'));
-        
-        try {
-            // Mock API response delay for realistic loading effect (3 seconds)
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            
-            // Assume the Flask API returns the structured JSON response
-            const data = MOCK_API_RESPONSE; // Use mock data here
-
-            // 3. Populate Results
-            
-            // Verdict
-            const verdictBox = document.getElementById('verdictBox');
-            verdictBox.textContent = data.verdict;
-            verdictBox.className = 'verdict-box ' + getVerdictClass(data.verdict);
-
-            // Suggestion
-            document.getElementById('suggestionText').innerHTML = data.suggestion;
-
-            // Nutrition Summary
-            const nutritionList = document.getElementById('nutritionList');
-            nutritionList.innerHTML = ''; // Clear previous list
-            for (const [key, value] of Object.entries(data.nutrition_summary)) {
-                nutritionList.innerHTML += `<li class="list-group-item"><strong>${key}:</strong> <span>${value}</span></li>`;
+        // Send request to Flask backend to save theme preference
+        fetch('{{ url_for('update_theme') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ theme: newTheme })
+        }).then(response => {
+            if (!response.ok) {
+                console.error("Failed to save theme preference on server.");
             }
-
-            // Ingredients of Concern/Benefit
-            const ingredientsList = document.getElementById('ingredientsList');
-            ingredientsList.innerHTML = ''; // Clear previous list
-            data.ingredients_of_concern.forEach(item => {
-                let colorClass = '';
-                if (item.includes('(Excellent)')) {
-                    colorClass = 'text-success';
-                } else if (item.includes('(Caution)')) {
-                    colorClass = 'text-warning';
-                }
-                ingredientsList.innerHTML += `<li class="${colorClass}"><i class="fas fa-check-circle"></i> ${item}</li>`;
-            });
-
-
-            // 4. Hide Loading and Show Dynamic Content
-            loadingStatus.style.display = 'none';
-            dynamicContent.style.display = 'block';
-
-        } catch (error) {
-            console.error("Analysis failed:", error);
-            loadingStatus.style.display = 'none';
-            document.getElementById('initialMessage').style.display = 'block';
-            document.getElementById('initialMessage').innerHTML = `<p class="text-danger">❌ **Analysis Error:** Could not process the label. Please ensure the image is clear.</p>`;
-        }
+        });
     }
+
+    // Theme check on load
+    window.onload = function() {
+        const theme = '{{ session.get("theme", "light") }}';
+        document.body.classList.remove('dark', 'light');
+        document.body.classList.add(theme);
+    }
+
+    // Add loading indicator on form submission (UX improvement)
+    document.getElementById('ocrForm').addEventListener('submit', function() {
+        document.getElementById('loadingStatus').style.display = 'block';
+        document.querySelector('.btn-primary').disabled = true;
+        document.querySelector('.btn-primary').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+    });
+
 </script>
 
 </body>

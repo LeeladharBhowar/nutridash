@@ -216,15 +216,14 @@
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     // Access the username passed from Flask (Jinja context)
     const CURRENT_USER = "{{ username }}"; 
     
-    // NOTE: In a live app, this mock data should be entirely replaced by your Flask API endpoints.
-
     /**
      * Renders the calculated macro targets into the grid.
-     * @param {object} goals - The goals data object fetched from /api/goals/<username>.
+     * @param {object} goals - The goals data object fetched from /api/goals.
      */
     function renderMacroTargets(goals) {
         const grid = document.getElementById('macroTargetGrid');
@@ -257,7 +256,6 @@
 
     /**
      * Fetches all user data (basic info + calculated goals) and updates the UI.
-     * This function is run on page load (onload="fetchProfileData()") to ensure real-time data sync.
      */
     async function fetchProfileData() {
         const loadingDiv = document.getElementById('targetLoading');
@@ -266,15 +264,22 @@
         loadingDiv.classList.remove('d-none');
         macroGrid.classList.add('d-none');
 
+        const profileFetchOptions = {
+            method: 'POST', // Required for your /api/user-profile route
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: CURRENT_USER }) 
+        };
+
         try {
-            // 1. Fetch Profile Data (Requires Flask implementation of /api/user-profile/<username>)
-            const profileResponse = await fetch(`/api/user-profile/${CURRENT_USER}`);
-            if (!profileResponse.ok) throw new Error("Profile fetch failed.");
+            // 1. Fetch Profile Data
+            const profileResponse = await fetch('{{ url_for("api_user_profile_post") }}', profileFetchOptions);
+            if (!profileResponse.ok) throw new Error("Profile fetch failed. Check Flask API setup.");
             const profileData = await profileResponse.json();
             
-            // 2. Fetch Calculated Targets (Requires Flask implementation of /api/goals/<username>)
-            const goalsResponse = await fetch(`/api/goals/${CURRENT_USER}`);
-            if (!goalsResponse.ok) throw new Error("Goals fetch failed.");
+            // 2. Fetch Calculated Targets (FIXED: Using GET for /api/goals/<username>)
+            // Note: The /api/goals route in main.py is a GET request and takes the username as part of the URL path.
+            const goalsResponse = await fetch('{{ url_for("get_user_goals", username=username) }}');
+            if (!goalsResponse.ok) throw new Error("Goals fetch failed. Check Flask API setup.");
             const goalsData = await goalsResponse.json();
             
             // 3. Update Basic Profile UI
@@ -286,7 +291,7 @@
             document.getElementById('healthGoal').textContent = goalText;
             document.getElementById('lastUpdate').textContent = profileData.last_updated;
 
-            // Apply Goal Color
+            // Apply Goal Color (for visual advanced UI)
             const goalP = document.getElementById('healthGoal');
             goalP.style.color = (profileData.health_goal.toLowerCase() === 'gain' ? '#3498db' : 
                                  profileData.health_goal.toLowerCase() === 'lose' ? '#e74c3c' : '#2ecc71');

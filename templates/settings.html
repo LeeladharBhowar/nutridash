@@ -1,180 +1,211 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>NutriDash - Advanced Settings</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <title>NutriDash - Advanced Settings</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
-  <style>
-    /* NOTE: Added dark theme logic for proper toggle functionality */
-    :root {
-      --bg-color: #f4f6f9;
-      --text-color: #333;
-      --card-bg: #fff;
-      --sidebar-bg: linear-gradient(180deg, #2c3e50, #34495e);
-      --sidebar-hover: #1abc9c;
-      --primary-btn: #007bff;
-      --info-btn: #17a2b8;
-      --success-color: #28a745;
-      --error-color: #dc3545;
-    }
+    <style>
+        /* Theme Variables (Matching Dashboard/Global Styles) */
+        :root {
+            --bg-color: #f8f9fa; /* Light background */
+            --text-color: #333;
+            --card-bg: #fff;
+            --sidebar-bg: linear-gradient(180deg, #2c3e50, #34495e);
+            --primary-color: #1abc9c; /* Teal/Green */
+            --primary-dark: #16a085;
+            --info-color: #3498db;
+            --success-color: #2ecc71;
+            --error-color: #e74c3c;
+        }
 
-    body.dark {
-      --bg-color: #121212;
-      --text-color: #f1f1f1;
-      --card-bg: #1e1e1e;
-      --sidebar-bg: linear-gradient(180deg, #1e1e1e, #333);
-      --sidebar-hover: #4a4a4a;
-      --primary-btn: #1abc9c;
-      --info-btn: #29b6f6;
-    }
-    
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: var(--bg-color);
-      margin: 0;
-      display: flex;
-      color: var(--text-color);
-      transition: background 0.3s, color 0.3s;
-    }
+        body.dark {
+            --bg-color: #121212;
+            --text-color: #f1f1f1;
+            --card-bg: #1e1e1e;
+            --sidebar-bg: linear-gradient(180deg, #1e1e1e, #333);
+            --primary-color: #2ecc71; /* Brighter green for dark mode */
+            --primary-dark: #1abc9c;
+            --info-color: #5dade2;
+            --success-color: #00b894;
+            --error-color: #c0392b;
+        }
+        
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg-color);
+            margin: 0;
+            display: flex;
+            color: var(--text-color);
+            transition: background 0.3s, color 0.3s;
+        }
 
-    /* Sidebar */
-    .sidebar {
-      width: 230px;
-      height: 100vh;
-      position: fixed;
-      left: 0;
-      top: 0;
-      background: var(--sidebar-bg);
-      color: white;
-      padding-top: 20px;
-      box-shadow: 3px 0 15px rgba(0,0,0,0.1);
-    }
+        /* Sidebar (Matching Dashboard) */
+        .sidebar {
+            width: 230px;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            background: var(--sidebar-bg);
+            color: white;
+            padding-top: 20px;
+            box-shadow: 3px 0 15px rgba(0,0,0,0.1);
+        }
 
-    .sidebar h3 {
-      text-align: center;
-      margin-bottom: 30px;
-      font-size: 22px;
-    }
+        .sidebar h3 { text-align: center; margin-bottom: 30px; font-size: 22px; letter-spacing: 1px; }
+        .sidebar ul { list-style: none; padding: 0; }
+        .sidebar ul li { margin: 15px 0; }
+        .sidebar ul li a {
+            color: white; text-decoration: none; font-size: 16px; display: flex;
+            align-items: center; padding: 10px 20px; transition: background 0.3s; border-radius: 8px;
+        }
+        .sidebar ul li a i { margin-right: 10px; }
+        .sidebar ul li a:hover, .sidebar ul li a.active { background: var(--primary-color); box-shadow: 0 0 8px rgba(0,0,0,0.3); }
+        .sidebar .logout { margin-top: 30px; text-align: center; display: block; color: var(--error-color); font-weight: bold; }
 
-    .sidebar ul {
-      list-style: none;
-      padding: 0;
-    }
+        /* Content */
+        .content {
+            margin-left: 230px;
+            padding: 30px;
+            flex: 1;
+        }
+        .content h2 {
+            color: var(--text-color);
+            font-weight: 700;
+            margin-bottom: 25px;
+        }
 
-    .sidebar ul li {
-      margin: 15px 0;
-    }
+        /* Card Styling (Matching Dashboard) */
+        .card { 
+            background-color: var(--card-bg);
+            border: none;
+            border-radius: 12px; 
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* Standard Dashboard Shadow */
+            transition: transform 0.2s ease-in-out;
+        }
+        .card:hover {
+            transform: translateY(-3px); /* Lift effect */
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        .card h4 {
+            color: var(--primary-color); 
+            font-weight: 700;
+            border-bottom: 1px solid color-mix(in srgb, var(--text-color) 10%, transparent);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        /* Form & Input Styling */
+        .form-control, .form-select {
+            background-color: var(--bg-color);
+            border-color: color-mix(in srgb, var(--text-color) 20%, transparent);
+            color: var(--text-color);
+            transition: border-color 0.2s;
+        }
+        .form-control:focus, .form-select:focus {
+            background-color: var(--card-bg);
+            border-color: var(--info-color);
+            box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--info-color) 30%, transparent);
+        }
+        
+        /* Button Styling */
+        .btn {
+            font-weight: 600;
+            transition: background-color 0.2s, transform 0.2s;
+        }
+        /* Override default Bootstrap primary/info to match theme */
+        .btn-info {
+            background-color: var(--primary-color); /* Use theme primary color for key action */
+            border-color: var(--primary-color);
+            color: white;
+        }
+        .btn-info:hover {
+            background-color: var(--primary-dark);
+            border-color: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        .btn-primary {
+            background-color: var(--info-color);
+            border-color: var(--info-color);
+        }
+        .btn-primary:hover {
+            background-color: #2980b9;
+            border-color: #2980b9;
+        }
+        .btn-dark {
+            background-color: var(--text-color);
+            border-color: var(--text-color);
+        }
+        body.dark .btn-dark {
+            background-color: #f1f1f1;
+            color: #121212;
+        }
 
-    .sidebar ul li a {
-      color: white;
-      text-decoration: none;
-      font-size: 16px;
-      display: flex;
-      align-items: center;
-      padding: 10px 20px;
-      transition: background 0.3s;
-      border-radius: 8px;
-    }
+        /* Message Styling */
+        .alert {
+            padding: 10px 15px;
+            margin-top: 15px;
+            border-radius: 8px;
+        }
+        .alert-success { background-color: var(--success-color); color: white; }
+        .alert-danger { background-color: var(--error-color); color: white; }
 
-    .sidebar ul li a i {
-      margin-right: 10px;
-    }
-
-    .sidebar ul li a:hover,
-    .sidebar ul li a.active {
-      background: var(--sidebar-hover);
-    }
-
-    .sidebar .logout {
-      margin-top: 30px;
-      text-align: center;
-      display: block;
-      color: #f8d7da;
-    }
-
-    /* Content */
-    .content {
-      margin-left: 230px;
-      padding: 30px;
-      flex: 1;
-    }
-    .content h2 {
-      color: var(--text-color);
-      margin-bottom: 25px;
-    }
-
-    /* Card Styling */
-    .card { 
-      background-color: var(--card-bg);
-      border: 1px solid #ddd;
-      border-radius: 12px; 
-      margin-bottom: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-      transition: background 0.3s, border-color 0.3s;
-    }
-    .card h4 {
-        color: #1abc9c; /* Green color for card headers */
-    }
-    .form-control, .form-select {
-        background-color: var(--bg-color);
-        border-color: #ccc;
-        color: var(--text-color);
-    }
-    body.dark .form-control, body.dark .form-select {
-        background-color: #333;
-        border-color: #555;
-        color: #f1f1f1;
-    }
-    
-    /* Specific button styling for contrast */
-    .btn-info {
-        background-color: var(--info-btn);
-        border-color: var(--info-btn);
-        color: white;
-    }
-    .btn-info:hover {
-        background-color: #0c8091;
-        border-color: #0c8091;
-    }
-
-    /* Message Styling */
-    .alert-success { background-color: var(--success-color); color: white; }
-    .alert-danger { background-color: var(--error-color); color: white; }
-  </style>
+        /* NEW: Gemini Suggestion Card Styling */
+        #macroSuggestionCard {
+            background-color: #e6f7ff; /* Light blue/info background */
+            border-left: 5px solid var(--info-color);
+            box-shadow: 0 2px 10px rgba(0, 123, 255, 0.2);
+            margin-top: 20px;
+        }
+        body.dark #macroSuggestionCard {
+            background-color: #2c3e50;
+            border-left: 5px solid var(--info-color);
+        }
+        .macro-detail {
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+        .macro-detail span {
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+    </style>
 </head>
-<body>
+<body class="{{ 'dark' if session.get('theme') == 'dark' else 'light' }}">
 
     <div class="sidebar">
     <h3><i class="fas fa-leaf"></i> NutriDash</h3>
     <ul>
-      <li><a href="/dashboard"><i class="fas fa-home"></i> Dashboard</a></li>
-      <li><a href="/food-analysis"><i class="fas fa-apple-alt"></i> Food Analysis</a></li>
-      <li><a href="/reports"><i class="fas fa-chart-bar"></i> Reports</a></li>
-      <li><a href="/settings" class="active"><i class="fas fa-cog"></i> Settings</a></li>
-      <li><a href="/tracker"><i class="fas fa-utensils"></i> Tracker</a></li>
-      <li><a href="/logout" class="logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+      <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> Dashboard</a></li>
+      <li><a href="{{ url_for('food_analysis') }}"><i class="fas fa-apple-alt"></i> Food Analysis</a></li>
+      <li><a href="{{ url_for('reports') }}"><i class="fas fa-chart-bar"></i> Reports</a></li>
+      <li><a href="{{ url_for('settings') }}" class="active"><i class="fas fa-cog"></i> Settings</a></li>
+      <li><a href="{{ url_for('tracker') }}"><i class="fas fa-utensils"></i> Tracker</a></li>
+      <li><a href="{{ url_for('logout') }}" class="logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
     </ul>
-  </div>
+    </div>
 
     <div class="content">
     <h2>⚙️ Advanced Settings for {{ username }}</h2>
 
     <div class="card p-4">
       <h4>🎯 Body Metrics & Goal (for AI Suggestions)</h4>
-      <p class="text-muted">Set your current weight and primary health goal. This data is used by the AI model to calculate personalized protein needs and health risk warnings in the Tracker.</p>
+      <p class="text-muted">Set your current weight and primary health goal. This data is used by the system to calculate your personalized macro targets on the **Profile** page.</p>
       
       <div class="row">
           <div class="col-md-6 mb-3">
               <label for="userWeight" class="form-label">Body Weight (kg)</label>
               <input type="number" class="form-control" id="userWeight" 
-                     value="{{ current_weight | float if current_weight is not none else 70.0 }}" 
-                     min="1" step="0.1" required>
+                      value="{{ current_weight | float if current_weight is not none else 70.0 }}" 
+                      min="1" step="0.1" required 
+                      oninput="generateGeminiSuggestion()">
           </div>
           <div class="col-md-6 mb-3">
               <label for="healthGoal" class="form-label">Primary Health Goal</label>
-              <select class="form-select" id="healthGoal" required>
+              <select class="form-select" id="healthGoal" required onchange="generateGeminiSuggestion()">
                   <option value="lose">Lose Weight</option>
                   <option value="maintain">Maintain Weight (Current)</option>
                   <option value="gain">Gain Muscle/Weight</option>
@@ -184,6 +215,13 @@
       
       <button class="btn btn-info w-100" onclick="updateUserProfile()"><i class="fas fa-save"></i> Save Metrics & Goal</button>
       <div id="profileMsg" class="mt-3"></div>
+    </div>
+    
+    <div id="macroSuggestionCard" class="card p-4">
+        <h4><i class="fas fa-robot me-2"></i> AI Personalized Macro Target</h4>
+        <div id="macroOutput">
+            <p class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Analyzing current metrics...</p>
+        </div>
     </div>
     <div class="card p-4">
       <h4>🔑 Change Password</h4>
@@ -203,129 +241,179 @@
       <h4>🎨 Theme Preference</h4>
       <button class="btn btn-dark" onclick="toggleTheme()" id="themeBtn">Switch Theme</button>
     </div>
-  </div>
+    </div>
 
-  <script>
-    // Helper function to show alerts
-    function showAlert(msgElement, message, isSuccess) {
-        msgElement.innerHTML = `<div class="alert alert-${isSuccess ? 'success' : 'danger'}">${message}</div>`;
-        setTimeout(() => {
-            msgElement.innerHTML = '';
-        }, 5000);
-    }
-    
-    // 📍 ADVANCED: Update User Profile (Weight & Goal)
-    async function updateUserProfile() {
-        const weightInput = document.getElementById("userWeight");
-        const goalInput = document.getElementById("healthGoal");
-        const weight = parseFloat(weightInput.value);
-        const goal = goalInput.value;
-        const msg = document.getElementById("profileMsg");
-        
-        // Basic validation
-        if (isNaN(weight) || weight <= 0) {
-            showAlert(msg, "❌ Please enter a valid weight.", false);
+    <script>
+      // Helper function to show alerts
+      function showAlert(msgElement, message, isSuccess) {
+          msgElement.innerHTML = `<div class="alert alert-${isSuccess ? 'success' : 'danger'}">${message}</div>`;
+          setTimeout(() => {
+              msgElement.innerHTML = '';
+          }, 5000);
+      }
+
+      // --- NEW: GEMINI SUGGESTION LOGIC ---
+
+      async function generateGeminiSuggestion() {
+          const weight = parseFloat(document.getElementById("userWeight").value);
+          const goal = document.getElementById("healthGoal").value;
+          const outputDiv = document.getElementById("macroOutput");
+
+          if (isNaN(weight) || weight <= 0) {
+              outputDiv.innerHTML = '<p class="text-muted">Please enter a valid body weight to generate personalized advice.</p>';
+              return;
+          }
+
+          outputDiv.innerHTML = '<p class="text-center text-info"><i class="fas fa-spinner fa-spin"></i> Generating personalized advice...</p>';
+
+          try {
+              const res = await fetch("{{ url_for('suggest_macros') }}", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ 
+                      weight: weight,
+                      goal: goal 
+                  })
+              });
+              
+              const data = await res.json();
+
+              if (data.error || !data.daily_calories) {
+                  throw new Error(data.error || "Missing macro data.");
+              }
+
+              // Display successful structured advice
+              outputDiv.innerHTML = `
+                  <div class="row text-center mb-3">
+                      <div class="col-3 macro-detail"><span>${data.daily_calories.toLocaleString()}</span><br>KCAL</div>
+                      <div class="col-3 macro-detail"><span>${data.daily_protein_g.toFixed(0)}</span>g<br>Protein</div>
+                      <div class="col-3 macro-detail"><span>${data.daily_carbs_g.toFixed(0)}</span>g<br>Carbs</div>
+                      <div class="col-3 macro-detail"><span>${data.daily_fat_g.toFixed(0)}</span>g<br>Fat</div>
+                  </div>
+                  <p class="text-success small mt-3 mb-0"><strong>AI Tip:</strong> ${data.tip}</p>
+              `;
+
+          } catch (err) {
+              console.error("Gemini Suggestion Error:", err);
+              outputDiv.innerHTML = `<p class="alert alert-danger p-2 small"><i class="fas fa-exclamation-triangle"></i> Error generating advice. Check console/API Key.</p>`;
+          }
+      }
+      
+      // 📍 ADVANCED: Update User Profile (Weight & Goal)
+      async function updateUserProfile() {
+          const weightInput = document.getElementById("userWeight");
+          const goalInput = document.getElementById("healthGoal");
+          const weight = parseFloat(weightInput.value);
+          const goal = goalInput.value;
+          const msg = document.getElementById("profileMsg");
+          
+          if (isNaN(weight) || weight <= 0) {
+              showAlert(msg, "❌ Please enter a valid weight.", false);
+              return;
+          }
+
+          try {
+              const res = await fetch("{{ url_for('update_user_profile') }}", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ 
+                      weight: weight,
+                      goal: goal 
+                  })
+              });
+
+              const data = await res.json();
+              showAlert(msg, data.message, data.success);
+              
+              if (data.success) {
+                  // After saving, reload to profile to see the permanent change
+                  setTimeout(() => {
+                      window.location.href = "{{ url_for('user_profile') }}"; 
+                  }, 800); 
+              }
+              
+          } catch (err) {
+              console.error("Profile update error:", err);
+              showAlert(msg, "❌ Network error. Could not update profile.", false);
+          }
+      }
+      
+      // Existing Update Password Function (Modified to use showAlert)
+      async function updatePassword() {
+        const current = document.getElementById("currentPassword").value;
+        const newPass = document.getElementById("newPassword").value;
+        const msg = document.getElementById("passwordMsg");
+
+        if (!current || !newPass) {
+            showAlert(msg, "❌ Both password fields must be filled.", false);
             return;
         }
-
+        
         try {
-            const res = await fetch("/update-user-profile", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ 
-                    weight: weight,
-                    goal: goal 
-                })
+            let res = await fetch("{{ url_for('update_password') }}", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ current: current, new: newPass })
             });
-
-            const data = await res.json();
+            
+            let data = await res.json();
             showAlert(msg, data.message, data.success);
             
-        } catch (err) {
-            console.error("Profile update error:", err);
-            showAlert(msg, "❌ Network error. Could not update profile.", false);
+            if (data.success) {
+                document.getElementById("currentPassword").value = "";
+                document.getElementById("newPassword").value = "";
+            }
+        } catch (e) {
+            showAlert(msg, "❌ Network error. Could not update password.", false);
         }
-    }
-    
-    // Existing Update Password Function (Modified to use showAlert)
-    async function updatePassword() {
-      const current = document.getElementById("currentPassword").value;
-      const newPass = document.getElementById("newPassword").value;
-      const msg = document.getElementById("passwordMsg");
-
-      if (!current || !newPass) {
-          showAlert(msg, "❌ Both password fields must be filled.", false);
-          return;
-      }
-      
-      try {
-          let res = await fetch("/update-password", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ current: current, new: newPass })
-          });
-          
-          let data = await res.json();
-          showAlert(msg, data.message, data.success);
-          
-          // Clear fields on success
-          if (data.success) {
-              document.getElementById("currentPassword").value = "";
-              document.getElementById("newPassword").value = "";
-          }
-      } catch (e) {
-          showAlert(msg, "❌ Network error. Could not update password.", false);
-      }
-    }
-
-    // Existing Toggle Theme Function
-    async function toggleTheme() {
-      let currentTheme = document.body.classList.contains("dark") ? "dark" : "light";
-      let newTheme = currentTheme === "light" ? "dark" : "light";
-      
-      document.body.classList.toggle("dark");
-      document.getElementById("themeBtn").innerText = newTheme === "light" ? "Switch to Light" : "Switch to Dark";
-
-      const res = await fetch("/update-theme", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ theme: newTheme })
-      });
-      // No need to check res.ok here, theme toggle is mostly cosmetic.
-    }
-
-    // Advanced: Apply theme and set initial goal on load
-    window.onload = async () => {
-      // 1. Theme initialization
-      try {
-          let res = await fetch("/get-theme");
-          let data = await res.json();
-          if (data.theme === "dark") {
-              document.body.classList.add("dark");
-              document.getElementById("themeBtn").innerText = "Switch to Light";
-          } else {
-              document.getElementById("themeBtn").innerText = "Switch to Dark";
-          }
-      } catch (e) {
-          console.warn("Could not fetch theme preference, defaulting to light.");
-          document.getElementById("themeBtn").innerText = "Switch to Dark";
       }
 
-      // 2. Set initial Health Goal from Flask data
-      // We rely on Flask passing the 'current_goal' variable to the template (which it does not in the original snippet, but must for the code to work)
-      // Since Flask passes current_weight, we assume it passes current_goal too.
-      // Jinja2 template is rendered like this: <select ... id="healthGoal"><option value="lose">...</option> ...</select>
-      const goalSelect = document.getElementById('healthGoal');
-      const initialGoal = "{{ current_goal }}"; // Assuming Flask passes this context variable
+      // Existing Toggle Theme Function
+      async function toggleTheme() {
+        let currentTheme = document.body.classList.contains("dark") ? "dark" : "light";
+        let newTheme = currentTheme === "light" ? "dark" : "light";
+        
+        document.body.classList.toggle("dark");
+        document.getElementById("themeBtn").innerText = newTheme === "light" ? "Switch to Dark" : "Switch to Light";
 
-      // Find the option whose value matches the current goal and set it as selected
-      for (let i = 0; i < goalSelect.options.length; i++) {
-          if (goalSelect.options[i].value === initialGoal) {
-              goalSelect.selectedIndex = i;
-              break;
-          }
+        const res = await fetch("{{ url_for('update_theme') }}", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ theme: newTheme })
+        });
       }
-    }
-  </script>
+
+      // Advanced: Apply theme and set initial goal on load
+      window.onload = async () => {
+        // 1. Theme initialization
+        try {
+            let res = await fetch("{{ url_for('get_theme') }}");
+            let data = await res.json();
+            if (data.theme === "dark") {
+                document.body.classList.add("dark");
+                document.getElementById("themeBtn").innerText = "Switch to Light";
+            } else {
+                document.getElementById("themeBtn").innerText = "Switch to Dark";
+            }
+        } catch (e) {
+            console.warn("Could not fetch theme preference, defaulting to light.");
+            document.getElementById("themeBtn").innerText = "Switch to Dark";
+        }
+
+        // 2. Set initial Health Goal from Flask data
+        const goalSelect = document.getElementById('healthGoal');
+        const initialGoal = "{{ current_goal }}"; 
+
+        for (let i = 0; i < goalSelect.options.length; i++) {
+            if (goalSelect.options[i].value === initialGoal) {
+                goalSelect.selectedIndex = i;
+                break;
+            }
+        }
+        
+        // 3. Generate initial Gemini suggestion based on loaded metrics
+        generateGeminiSuggestion();
+      }
+    </script>
 </body>
 </html>

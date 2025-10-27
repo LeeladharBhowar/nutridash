@@ -44,7 +44,7 @@
             margin-top: 20px;
         }
 
-        /* NEW: Goal Suggestion Card Styles */
+        /* NEW: Goal Suggestion Card Styles (Advanced Visual) */
         #goalSuggestionCard {
             background-color: #e8f5e9;
             border-left: 5px solid #28a745;
@@ -55,6 +55,9 @@
             padding: 10px;
             border-radius: 8px;
             text-align: center;
+            /* Added margin-x to reduce crowding */
+            margin-right: 10px; 
+            margin-left: 10px;
         }
         .goal-macro-box h5 {
             color: #2c3e50;
@@ -88,7 +91,7 @@
     <h2>📈 Historical Nutrition Reports</h2>
 
     <div id="goalSuggestionCard" class="report-card p-4">
-        <h4 class="mb-3"><i class="fas fa-bullseye me-2"></i> Your Personalized Diet Plan</h4>
+        <h4 class="mb-3"><i class="fas fa-bullseye me-2"></i> Your Personalized Daily Targets</h4>
         <div id="goalOutput">
             <p class="text-muted text-center"><i class="fas fa-spinner fa-spin"></i> Fetching targets based on your goal...</p>
         </div>
@@ -126,6 +129,7 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     // Access the current username from the Jinja context passed by Flask
     const CURRENT_USER = "{{ username }}"; 
@@ -149,39 +153,45 @@
     let dailyChart = null;
     let monthlyChart = null;
 
-    // --- NEW ADVANCED JS FUNCTION ---
+    /**
+     * Fetches personalized macro goals from the Flask API (using the same endpoint as Profile).
+     * @returns {Promise<void>}
+     */
     async function fetchGoalSuggestion() {
         const goalOutputDiv = document.getElementById('goalOutput');
 
-        // Note: For this to work, Flask must have a route: /api/goals/<username>
         try {
-            const response = await fetch(`/api/goals/${CURRENT_USER}`);
+            // Your Flask API route for calculated goals
+            const response = await fetch("{{ url_for('get_user_goals', username=username) }}");
+            
             if (!response.ok) {
-                // If API fails (e.g., user not logged in, server error), use placeholders
-                throw new Error("Could not fetch personalized goals.");
+                // Throw error if not found, forcing the catch block to display the error state
+                throw new Error("Could not fetch personalized goals. Status: " + response.status);
             }
             
             const data = await response.json();
             
-            // Generate dynamic display based on goal
+            // --- Gemini/Goal Display ---
+            // Note: The /api/goals route provides calculated targets based on weight/goal.
+            // The template uses these calculated targets directly.
             const goalText = `Based on your goal to **${data.goal}** and current weight (${data.weight} kg), your recommended daily intake is:`;
             
             const macroBoxes = `
-                <div class="row text-center mt-3">
-                    <div class="col-md-3 goal-macro-box mx-2">
+                <div class="row justify-content-center mt-3">
+                    <div class="col-md-3 goal-macro-box">
                         <h5>Calories</h5>
-                        <p>${data.target_calories} kcal</p>
+                        <p>${data.target_calories.toLocaleString()} kcal</p>
                     </div>
-                    <div class="col-md-3 goal-macro-box mx-2">
+                    <div class="col-md-3 goal-macro-box">
                         <h5>Protein</h5>
-                        <p>${data.target_protein} g</p>
+                        <p>${data.target_protein.toFixed(0)} g</p>
                     </div>
-                    <div class="col-md-3 goal-macro-box mx-2">
+                    <div class="col-md-3 goal-macro-box">
                         <h5>Carbs</h5>
-                        <p>${data.target_carbs} g</p>
+                        <p>${data.target_carbs.toFixed(0)} g</p>
                     </div>
                 </div>
-                <p class="text-muted small mt-3">Recommended Fat Intake: ${data.target_fat} g (approx. 25% of calories).</p>
+                <p class="text-muted small mt-3 text-center">Recommended Fat Intake: ${data.target_fat.toFixed(0)} g (approx. 25% of calories).</p>
             `;
 
             goalOutputDiv.innerHTML = `
@@ -190,6 +200,7 @@
             `;
 
         } catch (error) {
+            console.error("Error loading personalized plan:", error);
             goalOutputDiv.innerHTML = `
                 <p class="text-danger fw-bold">Error loading personalized plan.</p>
                 <p class="text-muted small">Please ensure your weight and health goal are set in the <a href="{{ url_for('settings') }}">Settings</a> page.</p>
@@ -198,11 +209,16 @@
     }
 
 
+    /**
+     * Initializes or updates the Chart.js visualization.
+     * @param {string} period - 'daily' or 'monthly'.
+     */
     function loadReportData(period) {
         const data = MOCK_REPORT_DATA[period];
         const canvasId = `macroChart${period === 'daily' ? 'Daily' : 'Monthly'}`;
         const ctx = document.getElementById(canvasId).getContext('2d');
 
+        // Destroy previous chart instance before creating a new one
         if (period === 'daily' && dailyChart) { dailyChart.destroy(); }
         if (period === 'monthly' && monthlyChart) { monthlyChart.destroy(); }
 
@@ -266,11 +282,10 @@
             }
         });
 
+        // Store chart instance
         if (period === 'daily') { dailyChart = newChart; }
         if (period === 'monthly') { monthlyChart = newChart; }
     }
 </script>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

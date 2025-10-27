@@ -1,14 +1,14 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, Response
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import sqlite3, os
+from datetime import datetime
+import pytesseract
+import cv2
+import re
+from PIL import Image
 import json 
-import numpy as np
-from typing import Dict, Tuple
-from datetime import datetime # Import for simulating 'last updated' time
-
-# NOTE: Uncomment these two lines if you install the Google GenAI SDK and want to use the live AI feature
-# from google import genai
-# from google.genai.errors import APIError 
+from google import genai 
+from google.genai.errors import APIError 
 
 # For demonstration, manually providing the API key from the .env file content
 GEMINI_API_KEY = "AIzaSyDZI9rYRBAmqs9d-iIZ9FLZGF_RxbLfvnY"
@@ -16,18 +16,39 @@ GEMINI_API_KEY = "AIzaSyDZI9rYRBAmqs9d-iIZ9FLZGF_RxbLfvnY"
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
+# --- Tesseract/OCR Setup ---
+UPLOAD_FOLDER = 'static/uploads'
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Set tesseract path (update this if needed)
+try:
+    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+except Exception as e:
+    print(f"Warning: Tesseract path might be incorrect or missing. OCR will fall back to RegEx or fail. Error: {e}")
+
+# --- Gemini Client Setup ---
+client = None
+try:
+    if GEMINI_API_KEY:
+        client = genai.Client(api_key=GEMINI_API_KEY)
+    else:
+        print("GEMINI API KEY not set. AI analysis will fall back to Tesseract/RegEx.")
+except Exception as e:
+    client = None
+    print(f"Error initializing Gemini client: {e}. AI analysis will fall back to Tesseract/RegEx.")
+
+
 # ---------------- Database Setup ----------------
 DB_NAME = "users.db"
 
 def init_db():
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
-
     try:
-        # Check if new columns exist
         c.execute("SELECT theme, weight, health_goal FROM users LIMIT 1")
     except sqlite3.OperationalError:
-        # Recreate table if columns are missing
         c.execute("DROP TABLE IF EXISTS users")
         c.execute("""
             CREATE TABLE users (
@@ -40,7 +61,6 @@ def init_db():
                 health_goal TEXT DEFAULT 'maintain'
             )
         """)
-        
     c.execute("""
         CREATE TABLE IF NOT EXISTS logged_meals (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,7 +71,6 @@ def init_db():
             FOREIGN KEY(user_id) REFERENCES users(id)
         )
     """)
-        
     c.execute("""
         CREATE TABLE IF NOT EXISTS notifications (
             user_id INTEGER PRIMARY KEY,
@@ -60,7 +79,6 @@ def init_db():
             FOREIGN KEY(user_id) REFERENCES users(id)
         )
     """)
-    
     conn.commit()
     conn.close()
 
@@ -89,7 +107,7 @@ def load_user(user_id):
         return User(user[0], user[1], user[2])
     return None
 
-# ---------------- Food Class and Data ----------------
+# ---------------- Food Data ----------------
 class Food:
     def __init__(self, name, type, calories, protein, fat, carbs, description):
         self.name = name
@@ -100,7 +118,6 @@ class Food:
         self.carbs = carbs
         self.description = description
 
-# Combined Food Data (Retained for tracker/dashboard functionality)
 foods = [
     Food("Burger", "junk", 500, 25, 30, 40, "A classic fast-food item with a juicy patty, cheese, and sauces."),
     Food("Pizza", "junk", 600, 20, 35, 50, "Cheesy and savory with high calories, often topped with processed meat."),
@@ -127,151 +144,319 @@ foods = [
     Food("Frozen Pizza", "frozen", 550, 22, 28, 50, "Pre-made frozen pizza, high in calories and fats."),
     Food("Frozen French Fries", "frozen", 400, 5, 22, 48, "Packaged frozen fries, quick to cook but unhealthy.")
 ]
-# Retaining detailed food lists structure for consistency in tracker page data attributes
-staple_foods = [
-    {"name":"Chapati (40g)", "calories":120, "protein":3, "carbs":25, "fat":0.4, "sugar":0.2, "fiber":3},
-    {"name":"Rice (1 cup)", "calories":200, "protein":4, "carbs":45, "fat":0.4, "sugar":0.1, "fiber":0.6},
-    {"name":"Brown Rice (1 cup)", "calories":215, "protein":5, "carbs":45, "fat":1.8, "sugar":0.7, "fiber":3.5},
-    {"name":"Paratha (1, with oil)", "calories":220, "protein":4, "carbs":36, "fat":8, "sugar":1.5, "fiber":3},
-    {"name":"Poha (1 cup cooked)", "calories":180, "protein":4, "carbs":30, "fat":5, "sugar":2, "fiber":2},
-    {"name":"Upma (1 cup)", "calories":200, "protein":6, "carbs":32, "fat":6, "sugar":2, "fiber":3},
-    {"name":"Idli (2 pcs)", "calories":150, "protein":4, "carbs":30, "fat":1, "sugar":0.5, "fiber":2},
-    {"name":"Dosa (1 medium)", "calories":170, "protein":3.5, "carbs":35, "fat":2, "sugar":0.5, "fiber":2},
-]
-pulses_foods = [
-    {"name":"Dal (1 cup)", "calories":180, "protein":12, "carbs":28, "fat":3, "sugar":1, "fiber":7},
-    {"name":"Chana (100g)", "calories":160, "protein":9, "carbs":27, "fat":3, "sugar":4, "fiber":8},
-    {"name":"Rajma (100g)", "calories":140, "protein":9, "carbs":23, "fat":0.5, "sugar":1, "fiber":6},
-    {"name":"Soybean (100g)", "calories":170, "protein":16, "carbs":15, "fat":9, "sugar":3, "fiber":6},
-    {"name":"Green Moong (100g)", "calories":105, "protein":7, "carbs":19, "fat":0.4, "sugar":2, "fiber":7},
-]
-veg_foods = [
-    {"name":"Spinach (100g)", "calories":40, "protein":5, "carbs":7, "fat":0.5, "sugar":1, "fiber":4},
-    {"name":"Ladyfinger (100g)", "calories":33, "protein":2, "carbs":7, "fat":0.2, "sugar":1.5, "fiber":3},
-    {"name":"Brinjal (100g)", "calories":35, "protein":1, "carbs":8, "fat":0.2, "sugar":3, "fiber":2.5},
-    {"name":"Carrot (100g)", "calories":25, "protein":0.5, "carbs":6, "fat":0.1, "sugar":3, "fiber":2},
-    {"name":"Tomato (100g)", "calories":22, "protein":1, "carbs":5, "fat":0.2, "sugar":3, "fiber":1.5},
-    {"name":"Potato (boiled, medium)", "calories":130, "protein":3, "carbs":30, "fat":0.2, "sugar":1.5, "fiber":3},
-    {"name":"Onion (100g)", "calories":40, "protein":1.1, "carbs":9, "fat":0.1, "sugar":4.7, "fiber":1.5},
-]
-fruits_foods = [
-    {"name":"Banana (1 medium)", "calories":105, "protein":1.3, "carbs":27, "fat":0.3, "sugar":14, "fiber":3},
-    {"name":"Apple (1 medium)", "calories":95, "protein":0.5, "carbs":25, "fat":0.3, "sugar":19, "fiber":4},
-    {"name":"Orange (1 medium)", "calories":62, "protein":1.2, "carbs":15, "fat":0.2, "sugar":12, "fiber":3},
-    {"name":"Mango (1 medium)", "calories":150, "protein":1, "carbs":38, "fat":0.5, "sugar":32, "fiber":3},
-    {"name":"Grapes (1 cup)", "calories":100, "protein":1, "carbs":27, "fat":0.3, "sugar":23, "fiber":1},
-    {"name":"Watermelon (1 cup)", "calories":46, "protein":1, "carbs":12, "fat":0.2, "sugar":9, "fiber":0.5},
-    {"name":"Papaya (1 cup)", "calories":60, "protein":1, "carbs":16, "fat":0.3, "sugar":9, "fiber":3},
-]
-dairy_foods = [
-    {"name":"Milk (1 cup)", "calories":150, "protein":8, "carbs":12, "fat":8, "sugar":12, "fiber":0},
-    {"name":"Curd (100g)", "calories":98, "protein":11, "carbs":4, "fat":4, "sugar":3, "fiber":0},
-    {"name":"Paneer (100g)", "calories":265, "protein":18, "carbs":6, "fat":20, "sugar":3, "fiber":0},
-    {"name":"Egg (1 large)", "calories":70, "protein":6, "carbs":0.6, "fat":5, "sugar":0.2, "fiber":0},
-    {"name":"Chicken (100g)", "calories":165, "protein":31, "carbs":0, "fat":3.6, "sugar":0, "fiber":0},
-    {"name":"Fish (100g)", "calories":200, "protein":22, "carbs":0, "fat":12, "sugar":0, "fiber":0},
-    {"name":"Almonds (10 pcs)", "calories":70, "protein":2.5, "carbs":2.5, "fat":6, "sugar":0.5, "fiber":2},
-    {"name":"Peanuts (30g)", "calories":160, "protein":7, "carbs":6, "fat":14, "sugar":1.5, "fiber":2},
-]
-snacks_foods = [
-    {"name":"Burger (1 medium)", "calories":400, "protein":17.5, "carbs":45, "fat":20, "sugar":8.5, "fiber":3},
-    {"name":"Pizza (1 slice)", "calories":315, "protein":12, "carbs":34, "fat":11, "sugar":5, "fiber":2},
-    {"name":"Samosa (1 medium)", "calories":250, "protein":4, "carbs":30, "fat":15, "sugar":2, "fiber":2},
-    {"name":"Pakora (100g)", "calories":300, "protein":8, "carbs":28, "fat":18, "sugar":3, "fiber":3},
-    {"name":"Chips (30g)", "calories":160, "protein":2, "carbs":15, "fat":10, "sugar":0.5, "fiber":1},
-    {"name":"Chocolate (40g)", "calories":210, "protein":2, "carbs":24, "fat":12, "sugar":20, "fiber":2},
-    {"name":"Ice Cream (100g)", "calories":200, "protein":4, "carbs":25, "fat":10, "sugar":20, "fiber":0},
-]
-drinks_foods = [
-    {"name":"Tea (1 cup)", "calories":70, "protein":2, "carbs":10, "fat":2, "sugar":8, "fiber":0},
-    {"name":"Coffee (1 cup)", "calories":80, "protein":2, "carbs":12, "fat":2, "sugar":9, "fiber":0},
-    {"name":"Cold Drink (330ml)", "calories":140, "protein":0, "carbs":35, "fat":0, "sugar":35, "fiber":0},
-    {"name":"Soft Drink (500ml)", "calories":210, "protein":0, "carbs":52, "fat":0, "sugar":52, "fiber":0},
-    {"name":"Energy Drink (250ml)", "calories":110, "protein":1, "carbs":28, "fat":0, "sugar":27, "fiber":0},
-    {"name":"Fresh Lemon Water (200ml)", "calories":40, "protein":0, "carbs":10, "fat":0, "sugar":9, "fiber":0},
-    {"name":"Coconut Water (200ml)", "calories":45, "protein":0.5, "carbs":11, "fat":0.5, "sugar":9, "fiber":1},
-]
+
+staple_foods = [{"name":"Chapati (40g)", "calories":120, "protein":3, "carbs":25, "fat":0.4, "sugar":0.2, "fiber":3},] 
+pulses_foods = [{"name":"Dal (1 cup)", "calories":180, "protein":12, "carbs":28, "fat":3, "sugar":1, "fiber":7},]
+veg_foods = [{"name":"Spinach (100g)", "calories":40, "protein":5, "carbs":7, "fat":0.5, "sugar":1, "fiber":4},] 
+fruits_foods = [{"name":"Banana (1 medium)", "calories":105, "protein":1.3, "carbs":27, "fat":0.3, "sugar":14, "fiber":3},]
+dairy_foods = [{"name":"Milk (1 cup)", "calories":150, "protein":8, "carbs":12, "fat":8, "sugar":12, "fiber":0},]
+snacks_foods = [{"name":"Burger (1 medium)", "calories":400, "protein":17.5, "carbs":45, "fat":20, "sugar":8.5, "fiber":3},]
+drinks_foods = [{"name":"Tea (1 cup)", "calories":70, "protein":2, "carbs":10, "fat":2, "sugar":8, "fiber":0},]
 
 
-# ---------------- ML/AI Advanced Functions ----------------
+# ---------------- OCR & ANALYSIS HELPER FUNCTIONS (ADVANCED) ----------------
 
-# 📌 ADVANCED ML FUNCTION 1: Meal Health Risk Scoring (Logistic Regression Mock)
-MODEL_WEIGHTS = np.array([-0.005, -0.15, 0.2, 0.05, 0.3, -0.1])
-INTERCEPT = 0.5 
+def extract_text(image_path):
+    """Extracts raw text from an image using Tesseract (used for fallback or raw display)."""
+    try:
+        img = cv2.imread(image_path)
+        if img is None:
+            return "OCR_ERROR_FILE_READ" 
+        
+        # Enhanced preprocessing for better Tesseract results
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gray = cv2.medianBlur(gray, 5) # Larger blur for better text aggregation
+        _, thresh = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        text = pytesseract.image_to_string(thresh, lang='eng')
+        return text
+    except Exception as e:
+        print(f"OCR Error during extraction: {e}")
+        return f"OCR_ERROR_EXTRACTION_FAILED: {e}"
 
-def predict_health_risk_score(nutrition_data: dict) -> Tuple[float, str]:
-    """
-    Predicts a health risk score (0 to 1) using a simple linear model.
-    """
+def analyze_food_health(text):
+    """Analyzes Tesseract-extracted text for key nutritional values and calculates a score (Fallback)."""
     
-    features = np.array([
-        nutrition_data['protein'], 
-        nutrition_data['fat'], 
-        nutrition_data['carbs'], 
-        nutrition_data['sugar'], 
-        nutrition_data['fiber']
-    ])
+    if text.startswith("OCR_ERROR_"):
+        return {
+            "Energy": 0, "Protein": 0, "Total Carbohydrates": 0, "Dietary Fiber": 0, "Sugars": 0, 
+            "Added Sugar": 0, "Total Fat": 0, "Saturated Fat": 0, "Trans Fat": 0, "Sodium": 0, "Cholesterol": 0,
+            "score": 0.0, 
+            "level": "Error ❌",
+            "risk_score": "N/A", 
+            "ingredients_risk": [] 
+        }
 
-    z = np.dot(features, MODEL_WEIGHTS) + INTERCEPT
-    risk_score = 1 / (1 + np.exp(-z))
+    # Enhanced RegEx logic to find key metrics and default to 0
+    def find_nutrient(pattern):
+        # Look for the pattern, then search for the first number (int or float) after the match
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+             # Search for number (with optional decimal) following the match, up to 15 characters later
+             num_match = re.search(r'(\d+\.?\d*)', text[match.end():match.end()+15], re.IGNORECASE)
+             if num_match:
+                 try:
+                     return float(num_match.group(1))
+                 except ValueError:
+                     return 0
+        return 0
+
+    results = {
+        "Energy": find_nutrient(r'calories|energy\s*(\d+)'), # kcal
+        "Protein": find_nutrient(r'protein\s*(\d+)'), # g
+        "Total Carbohydrates": find_nutrient(r'carbohydrate|carbs\s*(\d+)'), # g
+        "Dietary Fiber": find_nutrient(r'fiber\s*(\d+)'), # g
+        "Sugars": find_nutrient(r'sugars?\s*(\d+)'), # g
+        "Added Sugar": find_nutrient(r'added\s*sugar\s*(\d+)'), # g
+        "Total Fat": find_nutrient(r'total\s*fat\s*(\d+)'), # g
+        "Saturated Fat": find_nutrient(r'saturated\s*fat\s*(\d+)'), # g
+        "Trans Fat": find_nutrient(r'trans\s*fat\s*(\d+)'), # g
+        "Cholesterol": find_nutrient(r'cholesterol\s*(\d+)'), # mg
+        "Sodium": find_nutrient(r'sodium\s*(\d+)'), # mg
+    }
     
-    if risk_score < 0.3:
-        risk_level = "Low Risk (Excellent)"
-    elif risk_score < 0.65:
-        risk_level = "Medium Risk (Balanced)"
+    # Advanced Scoring Logic (Fallback)
+    c = results.get("Energy", 0)
+    p = results.get("Protein", 0)
+    sf = results.get("Saturated Fat", 0)
+    asg = results.get("Added Sugar", 0)
+    df = results.get("Dietary Fiber", 0)
+    sod = results.get("Sodium", 0) / 1000 # Convert mg to rough g for scoring
+
+    score = 100.0
+    score -= (c * 0.05)      # Energy penalty
+    score -= (sf * 3.0)      # High Sat Fat penalty
+    score -= (asg * 5.0)     # Very High Added Sugar penalty
+    score -= (sod * 2.0)     # Sodium penalty
+    score += (p * 2.5)       # High Protein reward
+    score += (df * 1.5)      # Fiber reward
+
+    score = max(0.0, min(100.0, score))
+
+    level = "Healthy 🟢" if score >= 70 else ("Moderate 🟡" if score >= 40 else "Unhealthy 🔴")
+    
+    for k, v in results.items():
+        results[k] = round(v, 2)
+        
+    return {
+        **results,
+        "score": round(score, 2), 
+        "level": level,
+        "risk_score": "Tesseract Fallback",
+        "ingredients_risk": ["Tesseract was used for macro extraction (less reliable)."]
+    }
+
+def gemini_ingredient_risk_analysis(image_path):
+    """
+    Uses Gemini to analyze the ingredient list from the image for risks and benefits.
+    """
+    global client
+    if not client:
+        return {"risk_score": "N/A", "ingredients_risk": ["Gemini client not available."]}
+    
+    INGREDIENT_RISK_SCHEMA = {
+        "type": "object",
+        "properties": {
+            "risk_level": {"type": "string", "description": "Overall risk level: 'Low', 'Medium', or 'High'."},
+            "ingredients_flagged": {
+                "type": "array",
+                "description": "List of 3-5 specific ingredients flagged as high risk (e.g., 'hydrogenated oils') or high benefit (e.g., 'whole grains').",
+                "items": {"type": "string"}
+            }
+        },
+        "required": ["risk_level", "ingredients_flagged"]
+    }
+
+    prompt = (
+        "Analyze the ingredient list from the image. Identify the 3-5 most critical ingredients, "
+        "labeling them as either (High Risk), (Medium Risk), or (High Benefit). "
+        "Determine the overall Risk Level for the product based on these ingredients. "
+        "Ignore common items like water, salt, and spices. Output must strictly follow the JSON schema."
+    )
+
+    try:
+        img_part = Image.open(image_path)
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=[prompt, img_part],
+            config={
+                'response_mime_type': 'application/json',
+                'response_schema': INGREDIENT_RISK_SCHEMA
+            }
+        )
+        
+        data = json.loads(response.text)
+        
+        return {
+            "risk_score": data.get('risk_level', 'N/A'),
+            "ingredients_risk": data.get('ingredients_flagged', ['Failed to parse ingredients.'])
+        }
+
+    except APIError as e:
+        print(f"Gemini Ingredient Risk API Error: {e}")
+        return {"risk_score": "API Error", "ingredients_risk": [f"API Error: {str(e)}"]}
+    except Exception as e:
+        print(f"General Gemini Ingredient Error: {e}")
+        return {"risk_score": "Error", "ingredients_risk": [f"General Error: {str(e)}"]}
+
+def gemini_structured_analysis(image_path):
+    """Uses the Gemini API in JSON mode with the image for structured, comprehensive data extraction."""
+    global client
+    if not client:
+        return None, None 
+    
+    # --- CORRECT AND COMPREHENSIVE SCHEMA for all requested nutrients ---
+    GEMINI_OUTPUT_SCHEMA = {
+        "type": "object",
+        "properties": {
+            "verdict": {"type": "string", "description": "A health verdict: 'Excellent', 'Good', 'Caution', or 'Poor'."},
+            "Energy": {"type": "number", "description": "Energy/Calories (number only, in kcal)."},
+            "Protein": {"type": "number", "description": "Protein in grams (number only)."},
+            "Total Carbohydrates": {"type": "number", "description": "Total Carbohydrates in grams (number only)."},
+            "Dietary Fiber": {"type": "number", "description": "Dietary Fiber in grams (number only)."},
+            "Sugars": {"type": "number", "description": "Total Sugar in grams (number only)."},
+            "Added Sugar": {"type": "number", "description": "Added Sugar in grams (number only, 0 if not listed)."},
+            "Total Fat": {"type": "number", "description": "Total Fat in grams (number only)."},
+            "Saturated Fat": {"type": "number", "description": "Saturated Fat in grams (number only)."},
+            "Trans Fat": {"type": "number", "description": "Trans Fat in grams (number only, 0 if not listed)."},
+            "Cholesterol": {"type": "number", "description": "Cholesterol in milligrams (number only, 0 if not listed)."},
+            "Sodium": {"type": "number", "description": "Sodium in milligrams (number only)."},
+            "suggestion": {"type": "string", "description": "A detailed, constructive suggestion (2-3 sentences) based on the label, offering alternatives or moderation advice."}
+        },
+        "required": ["verdict", "Energy", "Protein", "Total Carbohydrates", "Dietary Fiber", "Sugars", "Total Fat", "Saturated Fat", "Sodium", "suggestion"]
+    }
+
+    prompt = (
+        "Analyze the uploaded nutrition facts label. Extract all key macronutrients, including 'Energy', 'Protein', 'Total Carbohydrates', 'Dietary Fiber', 'Sugars', 'Added Sugar', 'Total Fat', 'Saturated Fat', 'Trans Fat', 'Cholesterol', and 'Sodium'. "
+        "If a specific nutrient is not explicitly listed, return 0 for its value. "
+        "Provide a health verdict (Excellent, Good, Caution, or Poor) and a detailed, constructive suggestion (2-3 sentences) based on the values. "
+        "The output must strictly follow the provided JSON schema."
+    )
+
+    try:
+        img_part = Image.open(image_path)
+        
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=[prompt, img_part],
+            config={
+                'response_mime_type': 'application/json',
+                'response_schema': GEMINI_OUTPUT_SCHEMA
+            }
+        )
+
+        data = json.loads(response.text)
+        
+        # --- NEW SCORING LOGIC for enhanced accuracy ---
+        c = data.get("Energy", 0)
+        p = data.get("Protein", 0)
+        sf = data.get("Saturated Fat", 0)
+        asg = data.get("Added Sugar", 0)
+        df = data.get("Dietary Fiber", 0)
+        sod = data.get("Sodium", 0) / 1000 # Convert mg to rough g for scoring
+
+        score = 100.0
+        score -= (c * 0.05)      # Energy penalty
+        score -= (sf * 3.0)      # High Sat Fat penalty
+        score -= (asg * 5.0)     # Very High Added Sugar penalty
+        score -= (sod * 2.0)     # Sodium penalty
+        score += (p * 2.5)       # High Protein reward
+        score += (df * 1.5)      # Fiber reward
+
+        score = max(0.0, min(100.0, score))
+        
+        for k in data:
+            if isinstance(data[k], (int, float)):
+                data[k] = round(data[k], 2)
+        
+        structured_result = {
+            "score": round(score, 2), 
+            "level": f"{data['verdict']} ✨",
+            "suggestion": data.pop('suggestion', 'No detailed suggestion provided.'),
+            **data 
+        }
+
+        return structured_result.pop('suggestion'), structured_result 
+
+    except APIError as e:
+        return f"GEMINI_API_ERROR: {e}", None
+    except Exception as e:
+        return f"GEMINI_GENERAL_ERROR: {e}", None
+
+
+def gemini_macro_suggestion(weight_kg, goal):
+    """Uses the Gemini API to provide a personalized macro target and suggestion."""
+    global client
+    if not client:
+        return json.dumps({"error": "Gemini client not available. Cannot generate advice."})
+
+    if goal == 'maintain':
+        goal_text = "maintaining their current weight."
+        protein_g_per_kg = 1.2
+    elif goal == 'lose':
+        goal_text = "losing weight (in a calorie deficit)."
+        protein_g_per_kg = 1.6
+    elif goal == 'gain':
+        goal_text = "gaining muscle mass (in a calorie surplus)."
+        protein_g_per_kg = 2.0
     else:
-        risk_level = "High Risk (Caution)"
+        goal_text = "achieving a balanced diet."
+        protein_g_per_kg = 1.2
+        
+    target_protein = round(weight_kg * protein_g_per_kg, 0)
 
-    return float(risk_score), risk_level
+    prompt = (
+        f"The user weighs {weight_kg} kg and is aiming for {goal_text}. "
+        f"Their target protein intake is {target_protein} grams per day. "
+        "Provide a detailed, structured, daily nutrition intake goal (Calories, Protein, Carbs, Fat) "
+        "and a brief, motivating tip (1-2 sentences). "
+        "The output must strictly follow the provided JSON schema."
+    )
+
+    GEMINI_MACRO_SCHEMA = {
+        "type": "object",
+        "properties": {
+            "daily_calories": {"type": "number"},
+            "daily_protein_g": {"type": "number"},
+            "daily_carbs_g": {"type": "number"},
+            "daily_fat_g": {"type": "number"},
+            "tip": {"type": "string"}
+        },
+        "required": ["daily_calories", "daily_protein_g", "daily_carbs_g", "daily_fat_g", "tip"]
+    }
+
+    try:
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=[prompt],
+            config={
+                'response_mime_type': 'application/json',
+                'response_schema': GEMINI_MACRO_SCHEMA
+            }
+        )
+        return response.text 
+    
+    except APIError as e:
+        print(f"Gemini Suggestion API Error: {e}")
+        return json.dumps({"error": "Failed to get AI advice due to API limits or error."})
+    except Exception as e:
+        print(f"General Gemini Suggestion Error: {e}")
+        return json.dumps({"error": "Failed to generate structured advice."})
 
 
-# 📌 ADVANCED AI FUNCTION 2: Gemini JSON Schema for Structured Output
-GEMINI_OUTPUT_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "verdict": {"type": "string", "description": "A single word verdict: 'Excellent', 'Good', 'Caution', or 'Poor'."},
-        "ingredients_of_concern": {"type": "array", "description": "List of 3-5 ingredients that are either very good (e.g., 'Fiber') or very bad (e.g., 'High Fructose Corn Syrup').", "items": {"type": "string"}},
-        "nutrition_summary": {"type": "object", "description": "Key nutrients with their values from the label.", "additionalProperties": {"type": "string"}},
-        "suggestion": {"type": "string", "description": "A brief, 1-2 sentence recommendation based on the label analysis."}
-    },
-    "required": ["verdict", "ingredients_of_concern", "nutrition_summary", "suggestion"]
-}
-
-# --- Mock AI Analysis Data (Used when rendering the result page) ---
-MOCK_AI_DATA = {
-    "verdict": "Good",
-    "ingredients_of_concern": ["Whole Oats (Excellent)", "High Fructose Corn Syrup (Caution)", "Soy Lecithin (Neutral)"],
-    "nutrition_summary": {"Calories": "300 kcal", "Protein": "8g", "Saturated Fat": "3g", "Sugar": "15g", "Sodium": "180mg"},
-    "suggestion": "The overall profile is good, but the **High Fructose Corn Syrup** is a concern. Enjoy in moderation and check serving size!"
-}
-
-
-# ---------------- Helper Functions ----------------
+# ---------------- Helper Functions (Database/User) ----------------
 def get_user_data(username):
-    """Retrieves user's weight and goal for personalized suggestion."""
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
     c.execute("SELECT weight, health_goal FROM users WHERE name = ?", (username,))
     result = c.fetchone()
     conn.close()
-    
     return {
         'weight': result[0] if result and result[0] is not None else 70.0,
         'goal': result[1] if result and result[1] else 'maintain'
     }
 
-
 def get_all_foods():
-    """Combines all food lists into a single list for easy lookup."""
     return staple_foods + pulses_foods + veg_foods + fruits_foods + dairy_foods + snacks_foods + drinks_foods
-
-def get_food_by_name(food_name):
-    """Finds a food item from all lists by name."""
-    all_foods = get_all_foods()
-    for food in all_foods:
-        if food["name"].lower() == food_name.lower():
-            return food
-    return None
 
 def get_user(phone):
     conn = sqlite3.connect(DB_NAME)
@@ -293,31 +478,30 @@ def add_user(name, phone, password):
         return False
 
 
-# ---------------- Routes ----------------
+# ---------------- AUTH ROUTES ----------------
 @app.route("/")
 def home():
     if "user" in session:
         return redirect(url_for("dashboard"))
     return redirect(url_for("login_page"))
 
-@app.route("/login", methods=["GET"])
+@app.route("/login", methods=["GET", "POST"])
 def login_page():
+    if request.method == "POST":
+        data = request.get_json()
+        phone = data.get("phone")
+        password = data.get("password")
+        user = get_user(phone)
+        if user and user[3] == password:
+            session["user"] = user[1].strip()
+            user_obj = User(user[0], user[1], user[2])
+            login_user(user_obj)
+            return jsonify({"success": True})
+        return jsonify({"success": False, "message": "Invalid phone or password"})
+    
     if "user" in session:
         return redirect(url_for("dashboard"))
     return render_template("auth.html")
-
-@app.route("/login", methods=["POST"])
-def login():
-    data = request.get_json()
-    phone = data.get("phone")
-    password = data.get("password")
-    user = get_user(phone)
-    if user and user[3] == password:
-        session["user"] = user[1].strip()
-        user_obj = User(user[0], user[1], user[2])
-        login_user(user_obj)
-        return jsonify({"success": True})
-    return jsonify({"success": False, "message": "Invalid phone or password"})
 
 @app.route("/register", methods=["POST"])
 def register():
@@ -331,66 +515,149 @@ def register():
         return jsonify({"success": True})
     return jsonify({"success": False, "message": "Registration failed"})
 
+
+# ---------------- APPLICATION ROUTES (Organized Flow) ----------------
+
+# 1. Dashboard
 @app.route("/dashboard")
+@login_required
 def dashboard():
-    if "user" not in session:
-        return redirect(url_for("login_page"))
-    return render_template("dashboard.html", username=session["user"], foods=foods)
+    return render_template("dashboard.html", username=current_user.username, foods=foods)
 
+# 2. Food Analysis (Input)
 @app.route("/food-analysis")
+@login_required
 def food_analysis():
-    if "user" not in session:
-        return redirect(url_for("login_page"))
-    return render_template("food_analysis.html", username=session["user"], foods=foods)
+    # This route is now correct and separate from the result.html logic
+    return render_template("food_analysis.html", username=current_user.username)
 
-# ✅ ROUTE: Handles file upload and renders the result page.
+# 3. Analyze (Processing & Output)
 @app.route("/analyze", methods=["POST"])
+@login_required
 def analyze():
     file = request.files.get("file")
-    if not file:
+    if not file or file.filename == '':
         return redirect(url_for("food_analysis"))
 
-    filepath = os.path.join("static", "uploads", file.filename)
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     file.save(filepath)
     
-    ai_data = MOCK_AI_DATA 
+    result = None
+    suggestion = None # Now holds the detailed suggestion from Gemini
     
+    # 1. PRIMARY ANALYSIS (Macros + Suggestion)
+    if client:
+        suggestion, gemini_result = gemini_structured_analysis(filepath)
+        if gemini_result:
+            result = gemini_result
+            print("Successfully analyzed macros using Gemini.")
+            
+    # 2. FALLBACK (If Gemini failed or was skipped)
+    if not result:
+        print("Falling back to Tesseract/RegEx analysis for macros.")
+        raw_ocr_text = extract_text(filepath)
+        result = analyze_food_health(raw_ocr_text)
+        suggestion = "Tesseract/RegEx Fallback: Macro analysis succeeded, but detailed suggestion is limited. Aim for whole foods and moderation."
+        if raw_ocr_text.startswith("OCR_ERROR_"):
+             suggestion = "FATAL OCR ERROR: " + raw_ocr_text.replace("OCR_ERROR_", "")
+    
+    # 3. ADVANCED INGREDIENT RISK ANALYSIS
+    risk_data = gemini_ingredient_risk_analysis(filepath)
+    
+    # 4. MERGE RESULTS
+    if result and isinstance(result, dict):
+        result.update(risk_data)
+        
+    if not result:
+        result = {
+            "Energy": 0, "Protein": 0, "Total Carbohydrates": 0, "Dietary Fiber": 0, "Sugars": 0, "Added Sugar": 0, 
+            "Total Fat": 0, "Saturated Fat": 0, "Trans Fat": 0, "Cholesterol": 0, "Sodium": 0,
+            "score": 0.0, "level": "Critical Error ❌", "risk_score": "N/A", "ingredients_risk": ["CRITICAL ERROR: Analysis failed to complete."]
+        }
+        suggestion = suggestion or "CRITICAL ERROR: Analysis could not complete."
+        
+    # IMPORTANT: The 'text' variable from the old structure is no longer used, only 'suggestion'
     return render_template(
         "result.html", 
         image=file.filename,
-        ai_data=ai_data,
-        text="Raw OCR Output Mock: (Implement OCR/Gemini API here for actual data)" 
+        result=result, 
+        suggestion=suggestion
     )
 
+# 4. Reports
 @app.route("/reports")
+@login_required
 def reports():
-    if "user" not in session:
-        return redirect(url_for("login_page"))
-    return render_template("reports.html", username=session["user"], foods=foods)
+    return render_template("reports.html", username=current_user.username, foods=foods)
 
-# ✅ MODIFIED ROUTE: Food Tracker Calculation with ML Risk Score
+# 5. Settings
+@app.route("/settings")
+@login_required
+def settings():
+    user_data = get_user_data(current_user.username)
+    return render_template("settings.html", 
+                           username=current_user.username, 
+                           current_weight=user_data['weight'],
+                           current_goal=user_data['goal'])
+
+@app.route("/api/suggest-macros", methods=["POST"])
+@login_required
+def suggest_macros():
+    data = request.get_json()
+    try:
+        weight = float(data.get('weight'))
+        goal = data.get('goal')
+    except (ValueError, TypeError):
+        return jsonify({"error": "Invalid input for weight or goal."}), 400
+
+    if goal not in ['lose', 'maintain', 'gain']:
+        return jsonify({"error": "Invalid goal selected."}), 400
+        
+    json_response = gemini_macro_suggestion(weight, goal)
+    
+    if isinstance(json_response, str) and "Gemini client not available" in json_response:
+        return jsonify({"error": json_response}), 503
+    
+    return Response(json_response, mimetype='application/json')
+
+@app.route("/update-theme", methods=["POST"])
+@login_required
+def update_theme():
+    data = request.get_json()
+    theme = data.get("theme")
+    username = current_user.username
+
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    c.execute("UPDATE users SET theme=? WHERE name=?", (theme, username))
+    conn.commit()
+    conn.close()
+
+    # Crucial: Update the session variable so Flask templates (like the sidebar) update immediately
+    session['theme'] = theme 
+    
+    return jsonify({"success": True, "message": f"Theme updated to {theme}"})
+
+# 6. Tracker
+@app.route("/tracker")
+@login_required
+def tracker():
+    foods_by_category = {
+        "Staple": staple_foods, "Pulses": pulses_foods, "Vegetables": veg_foods, "Fruits": fruits_foods, 
+        "Dairy/Protein": dairy_foods, "Snacks": snacks_foods, "Drinks": drinks_foods
+    }
+    return render_template("tracker.html", foods_by_category=foods_by_category, username=current_user.username)
+
 @app.route("/calculate_nutrition", methods=["POST"])
 @login_required
 def calculate_nutrition():
     data = request.get_json()
     selected_foods = data.get("foods", [])
 
-    if not selected_foods:
-        return jsonify({"error": "No foods selected"}), 400
-
-    total_nutrition = {
-        "calories": 0.0,
-        "protein": 0.0,
-        "carbs": 0.0,
-        "fat": 0.0,
-        "sugar": 0.0,
-        "fiber": 0.0,
-    }
-
+    total_nutrition = {"calories": 0.0, "protein": 0.0, "carbs": 0.0, "fat": 0.0, "sugar": 0.0, "fiber": 0.0,}
     food_lookup = {food["name"].lower(): food for food in get_all_foods()}
     user_data = get_user_data(current_user.username)
-    user_weight = user_data['weight']
 
     for item in selected_foods:
         name = item.get("name", "").strip()
@@ -408,78 +675,35 @@ def calculate_nutrition():
                     total_nutrition[nutrient] += value * quantity
                 except ValueError:
                     continue
-
-    # --- ADVANCED ML PREDICTION ---
-    risk_score, risk_level = predict_health_risk_score(total_nutrition)
-
-    # --- Advanced Suggestion Logic based on Body Weight and Goal ---
-    target_protein_per_kg = 1.6 if user_data['goal'] == 'gain' else 1.2
-    target_protein = user_weight * target_protein_per_kg
-    protein_diff = total_nutrition["protein"] - target_protein
-
-    # Round totals
+    
     rounded_nutrition = {k: round(v, 2) for k, v in total_nutrition.items()}
-
-    # Generate suggestion
-    if risk_score > 0.65:
-        suggestion = f"⚠️ **HIGH RISK ({risk_level})**. Your meal's high fat/sugar content significantly raises the ML risk score to {risk_score:.2f}. Choose whole foods next time."
-    elif protein_diff < -10:
-        suggestion = f"Your protein is significantly **low** ({rounded_nutrition['protein']}g). Aim for {round(target_protein, 1)}g to meet your '{user_data['goal']}' goal (Risk Score: {risk_score:.2f})."
-    elif rounded_nutrition["fiber"] < 25:
-        suggestion = f"Your fiber is **low** ({rounded_nutrition['fiber']}g). Increase whole grains or vegetables like Brown Rice and Spinach."
-    else:
-        suggestion = f"**Excellent** meal choices! Your macro balance is appropriate for your goal (Risk Score: {risk_score:.2f})."
+    suggestion = f"Tracking successful! Total Calories: {rounded_nutrition['calories']}. Check your goal of '{user_data['goal']}'."
 
     response = {
         "total_nutrition": rounded_nutrition,
         "suggestion": suggestion,
-        "risk_score": round(risk_score, 3), 
-        "risk_level": risk_level
     }
 
     return jsonify(response)
 
 
-@app.route("/tracker")
-def tracker():
-    if "user" not in session:
-        return redirect(url_for("login_page"))
-
-    foods_by_category = {
-        "Staple": staple_foods,
-        "Pulses": pulses_foods,
-        "Vegetables": veg_foods,
-        "Fruits": fruits_foods,
-        "Dairy/Protein": dairy_foods,
-        "Snacks": snacks_foods,
-        "Drinks": drinks_foods
-    }
-
-    return render_template("tracker.html", foods_by_category=foods_by_category, username=session["user"])
-
-# ---------------- SETTINGS PAGE ----------------
-@app.route("/settings")
-def settings():
-    if "user" not in session:
-        return redirect(url_for("login_page"))
-        
-    user_data = get_user_data(session["user"])
-    
-    return render_template("settings.html", 
-                           username=session["user"], 
-                           current_weight=user_data['weight'],
-                           current_goal=user_data['goal'])
+# 7. Logout
+@app.route("/logout")
+@login_required
+def logout():
+    session.pop("user", None)
+    logout_user()
+    return redirect(url_for("login_page"))
 
 
+# ---------------- PROFILE & OTHER API ROUTES ----------------
 @app.route("/update-password", methods=["POST"])
+@login_required
 def update_password():
-    if "user" not in session:
-        return jsonify({"success": False, "message": "Unauthorized"}), 401
-
     data = request.get_json()
     current = data.get("current")
     new_pass = data.get("new")
-    username = session["user"]
+    username = current_user.username
 
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
@@ -496,29 +720,10 @@ def update_password():
 
     return jsonify({"success": True, "message": "Password updated successfully"})
 
-@app.route("/update-theme", methods=["POST"])
-def update_theme():
-    if "user" not in session:
-        return jsonify({"success": False, "message": "Unauthorized"}), 401
-
-    data = request.get_json()
-    theme = data.get("theme")
-    username = session["user"]
-
-    conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-    c.execute("UPDATE users SET theme=? WHERE name=?", (theme, username))
-    conn.commit()
-    conn.close()
-
-    return jsonify({"success": True, "message": f"Theme updated to {theme}"})
-
 @app.route("/get-theme", methods=["GET"])
+@login_required
 def get_theme():
-    if "user" not in session:
-        return jsonify({"theme": "light"})
-
-    username = session["user"]
+    username = current_user.username
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
     c.execute("SELECT theme FROM users WHERE name=?", (username,))
@@ -528,7 +733,6 @@ def get_theme():
     theme = row[0] if row and row[0] else "light"
     return jsonify({"theme": theme})
 
-# ✅ MODIFIED ROUTE: Update Weight and Goal
 @app.route("/update-user-profile", methods=["POST"])
 @login_required
 def update_user_profile():
@@ -570,44 +774,33 @@ def update_user_profile():
     return jsonify({"success": True, "message": "Profile (Weight & Goal) updated successfully. Suggestions will be updated."})
 
 
-@app.route("/logout")
-def logout():
-    session.pop("user", None)
-    logout_user()
-    return redirect(url_for("login_page"))
-
-# New route to fetch and calculate personalized daily targets
 @app.route("/api/goals/<username>", methods=["GET"])
 @login_required
 def get_user_goals(username):
-    # This function uses the user's stored weight and health_goal
+    if current_user.username != username:
+        return jsonify({"error": "Unauthorized access (username mismatch)"}), 403
+        
     user_data = get_user_data(username)
     weight_kg = user_data['weight']
     goal = user_data['goal']
     
-    # --- Advanced Calorie Calculation (Simplified Harris-Benedict/Activity Factor) ---
-    # Assuming a BMR of roughly 24 kcal/kg (very rough average)
     BMR = weight_kg * 24 
     TDEE = BMR * 1.55 
     
-    calorie_adjustment = 0 # Default (Maintain)
+    calorie_adjustment = 0 
     if goal == 'lose':
-        calorie_adjustment = -500 # Deficit for weight loss
+        calorie_adjustment = -500 
     elif goal == 'gain':
-        calorie_adjustment = 500  # Surplus for weight gain
+        calorie_adjustment = 500   
 
     target_calories = TDEE + calorie_adjustment
     
-    # --- Advanced Macro Calculation ---
-    # Protein: 1.8g/kg (Gain), 1.6g/kg (Maintain/Loose)
     protein_multiplier = 1.8 if goal == 'gain' else 1.6
     target_protein = weight_kg * protein_multiplier
     
-    # Fat: Typically 25% of total calories
     target_fat_cals = target_calories * 0.25
     target_fat = target_fat_cals / 9
     
-    # Carbs: Remaining calories
     protein_cals = target_protein * 4
     carb_cals = target_calories - protein_cals - target_fat_cals
     target_carbs = carb_cals / 4
@@ -623,47 +816,49 @@ def get_user_goals(username):
     })
 
 @app.route("/profile")
-def user_profile():
-    if "user" not in session:
-        return redirect(url_for("login_page"))
-    return render_template("profile.html", username=session["user"])
-
-# In main.py:
-@app.route("/api/user-profile/<username>", methods=["GET"])
 @login_required
-def api_user_profile(username):
-    # This block is now redundant and dangerous, REMOVE IT:
-    if current_user.username != username:
-         return jsonify({"error": "Unauthorized access"}), 403
+def user_profile():
+    return render_template("profile.html", username=current_user.username)
 
-    # Use current_user.id for security and database lookup
+@app.route("/api/user-profile", methods=["POST"])
+@login_required
+def api_user_profile_post():
+    try:
+        data = request.get_json()
+        username = data.get('username')
+    except:
+        return jsonify({"error": "Invalid JSON data."}), 400
+
     user_id = current_user.id 
-    
+
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
     
-    # Check if the user ID matches the requested username (secondary defense)
     c.execute("SELECT phone, weight, health_goal, name FROM users WHERE id = ?", (user_id,))
     result = c.fetchone()
-    
-    if not result or result[3] != username:
-        conn.close()
-        return jsonify({"error": "Unauthorized or user mismatch"}), 403
-
-    phone, weight, health_goal, _ = result
     conn.close()
 
-    # Generate mock 'last_updated' time
-    last_updated_time = datetime.now().strftime("%H:%M") 
+    if not result:
+        return jsonify({"error": "User data not found."}), 404
+
+    phone, weight, health_goal, db_username = result
+    
+    if db_username != username:
+        return jsonify({"error": "Unauthorized access attempt (username mismatch)."}), 403
+
+    last_updated_time = datetime.now().strftime("%I:%M %p") 
     
     return jsonify({
-        "name": username,
+        "name": db_username,
         "phone": phone,
         "weight": weight,
         "health_goal": health_goal,
         "last_updated": f"Today at {last_updated_time}"
     })
 
+
 # ---------------- Run ----------------
 if __name__ == "__main__":
+    if not os.path.exists(app.config['UPLOAD_FOLDER']):
+        os.makedirs(app.config['UPLOAD_FOLDER'])
     app.run(debug=True)

@@ -26,7 +26,7 @@
             color: white; 
             padding-top: 20px;
             box-shadow: 3px 0 15px rgba(0,0,0,0.1);
-            z-index: 1000; /* Ensure sidebar is on top */
+            z-index: 1000;
         }
         .sidebar h3 { text-align: center; margin-bottom: 30px; font-size: 22px; letter-spacing: 1px; }
         .sidebar ul { list-style: none; padding: 0; }
@@ -50,7 +50,7 @@
             margin-left: 230px; 
             padding: 30px; 
             flex: 1; 
-            position: relative; /* Needed for absolute positioning of profile */
+            position: relative; 
         }
         h2 { color: #2c3e50; font-weight: 700; }
         .card { 
@@ -76,10 +76,41 @@
             align-items: center;
         }
 
-        /* NEW DIET PLAN CARD */
+        /* TARGET TABLE & DIET PLAN STYLING */
+        #userTargetTable {
+            border: 2px solid #3498db;
+            margin-bottom: 25px;
+            background-color: #f0f7ff;
+            display: block;
+        }
+        #targetTableOutput {
+            padding: 15px;
+        }
+        .macro-target-box {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+        }
+        .macro-target-box h6 {
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 2px;
+            font-size: 1em;
+        }
+        .macro-target-box p {
+            color: #1abc9c;
+            font-size: 1.2em;
+            font-weight: 700;
+            margin-bottom: 0;
+        }
+
+
         #dietPlanCard {
-            background-color: #f7f9fa; /* Light background for the whole section */
-            border-left: 5px solid #3498db;
+            background-color: #f7f9fa; 
+            border-left: 5px solid #1abc9c;
             margin-bottom: 30px;
             padding: 25px;
         }
@@ -114,33 +145,17 @@
         .tag-fat { background-color: #f8d7da; color: #721c24; }
 
 
-        /* Food Card Styling (Advanced & Image Size Adjustment) */
+        /* Food Card Styling */
         .nutrition-container { 
             display: grid; 
             grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
             gap: 20px; 
         }
-        .food-card { 
-            position: relative; 
-            border-radius: 10px; 
-            overflow: hidden; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
-            cursor: pointer; 
-            transition: transform 0.2s ease-in-out, box-shadow 0.3s; 
-            height: 220px; 
-            display: flex;
-            flex-direction: column;
-        }
-        .food-card:hover { transform: scale(1.03); }
-
+        .food-card { height: 220px; display: flex; flex-direction: column; background-color: white; cursor: pointer; }
         .food-image-wrapper { height: 120px; width: 100%; overflow: hidden; border-bottom: 1px solid #eee; }
         .food-image { width: 100%; height: 100%; background-size: cover; background-position: center; transition: transform 0.5s ease; }
         .food-card:hover .food-image { transform: scale(1.05); }
 
-        .food-info { padding: 10px; text-align: center; flex-grow: 1; background-color: white; }
-        .food-info strong { display: block; font-size: 1.1em; color: #34495e; margin-bottom: 5px; }
-        .food-info small { color: #999; }
-        
         .food-card.recommended { box-shadow: 0 0 15px 3px #1abc9c; border: 3px solid #1abc9c; transform: none; }
         .food-card.recommended .food-info { background-color: #e6fff7; }
 
@@ -148,51 +163,22 @@
         .food-card.junk { border: 2px solid #e74c3c; }
         .food-card.dairy { border: 2px solid #f1c40f; }
         .food-card.frozen { border: 2px solid #3498db; }
+        
+        .food-info { padding: 10px; flex-grow: 1; }
 
-        /* PROFILE STYLING */
-        .profile-area {
-            position: absolute;
-            top: 30px; 
-            right: 30px; 
-            z-index: 10; 
-        }
+        /* PROFILE STYLING (For Top Right Icon) */
+        .profile-area { position: absolute; top: 30px; right: 30px; z-index: 10; }
         .profile-icon {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            background-color: #1abc9c; 
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 1.2em;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            width: 45px; height: 45px; border-radius: 50%; background-color: #1abc9c; 
+            display: flex; align-items: center; justify-content: center; color: white;
+            font-size: 1.2em; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
-        .profile-icon:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-        .profile-area .dropdown-menu {
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-            border: none;
-            min-width: 180px;
-        }
-        .profile-area .dropdown-item {
-            color: #34495e;
-            padding: 10px 15px;
-            transition: background-color 0.2s;
-        }
-        .profile-area .dropdown-item:hover {
-            background-color: #e9f5f5;
-            color: #1abc9c;
-        }
-        .profile-area .dropdown-item i {
-            margin-right: 8px;
-            width: 20px; 
-        }
+        .profile-icon:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .profile-area .dropdown-menu { border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border: none; min-width: 180px; }
+        .profile-area .dropdown-item { color: #34495e; padding: 10px 15px; transition: background-color 0.2s; }
+        .profile-area .dropdown-item:hover { background-color: #e9f5f5; color: #1abc9c; }
+        .profile-area .dropdown-item i { margin-right: 8px; width: 20px; }
     </style>
 </head>
 <body>
@@ -212,7 +198,7 @@
     <div class="content">
 
         <h2 class="mb-4">Welcome, {{ username }} 🎉</h2>
-
+        
         <div class="profile-area dropdown">
             <div class="profile-icon" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="fas fa-user"></i> 
@@ -220,7 +206,7 @@
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
                 <li><h6 class="dropdown-header">Hello, {{ username }}!</h6></li>
                 <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="/profile"><i class="fas fa-id-badge"></i> My Profile</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('user_profile') }}"><i class="fas fa-id-badge"></i> My Profile</a></li>
                 <li><a class="dropdown-item" href="{{ url_for('settings') }}"><i class="fas fa-cog"></i> Account Settings</a></li>
                 <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
@@ -261,6 +247,13 @@
 
         </div>
         
+        <div id="userTargetTable" class="card p-4 d-none">
+            <h4 class="mb-3 text-dark"><i class="fas fa-chart-bar me-2"></i> Your Estimated Daily Macro Needs</h4>
+            <div id="targetTableOutput">
+                <p class="text-muted text-center"><i class="fas fa-spinner fa-spin"></i> Fetching targets...</p>
+            </div>
+        </div>
+        
         <div id="dietPlanCard" class="card p-4">
             <h4 class="mb-3 text-primary"><i class="fas fa-clipboard-list me-2"></i> Sample Goal-Based Diet Plan</h4>
             <div id="dietPlanOutput">
@@ -276,6 +269,9 @@
             <div class="food-card {{ food.type }}" 
                  data-calories="{{ food.calories }}" 
                  data-protein="{{ food.protein }}"
+                 data-fat="{{ food.fat }}"
+                 data-carbs="{{ food.carbs }}"
+                 data-description="{{ food.description|escape }}"
                  data-food-name="{{ food.name|escape }}">
                 
                 <div class="food-image-wrapper">
@@ -290,7 +286,7 @@
                 </div>
             </div>
             {% endfor %}
-        </div>
+            </div>
         
     </div>
 
@@ -310,13 +306,51 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // Initial display is the dashboard
-    document.addEventListener('DOMContentLoaded', () => {
+    const CURRENT_USER = "{{ username }}"; 
+    
+    // --- Initial Load Sequence ---
+    document.addEventListener('DOMContentLoaded', async () => {
+        const goalsData = await fetchGoalsData(); 
+        
+        if (goalsData) {
+            const goalSelect = document.getElementById('weightGoal');
+            goalSelect.value = goalsData.goal.toLowerCase();
+
+            displayTargetTable(goalsData);
+        } else {
+            // Placeholder data if API fails
+            displayTargetTable({
+                "target_calories": 2000,
+                "target_protein": 80,
+                "target_fat": 60,
+                "target_carbs": 240,
+                "goal": "MAINTAIN",
+                "weight": 70
+            });
+        }
+        
         filterFoods();
-        displayDietPlan(); // Load initial plan (will show default message)
+        displayDietPlan(); 
     });
 
-    // Food Modal
+    // --- API & DATA FETCHING ---
+    async function fetchGoalsData() {
+        try {
+            // Use the API route defined in main.py
+            const goalsResponse = await fetch(`{{ url_for('get_user_goals', username=username) }}`);
+            
+            if (!goalsResponse.ok) {
+                console.error("Failed to fetch goals data.");
+                return null;
+            }
+            return await goalsResponse.json();
+        } catch (error) {
+            console.error("Network error fetching goals:", error);
+            return null;
+        }
+    }
+
+    // --- UI/MODAL FUNCTIONS ---
     function openModal(name, calories, protein, fat, carbs, desc){
         document.getElementById('modalName').textContent = name;
         document.getElementById('modalCalories').innerHTML = `<strong>Calories:</strong> ${calories} kcal`;
@@ -327,43 +361,101 @@
         new bootstrap.Modal(document.getElementById('foodModal')).show();
     }
 
-    // Dynamic Filter & Recommendation Logic (Kept)
+    // --- ADVANCED FEATURE: TARGET TABLE RENDERING ---
+    function displayTargetTable(goalsData) {
+        const outputDiv = document.getElementById('targetTableOutput');
+        const card = document.getElementById('userTargetTable');
+        
+        if (!goalsData || !goalsData.target_calories) {
+            card.classList.add('d-none');
+            return;
+        }
+        card.classList.remove('d-none');
+        
+        // Use the weight and goal from the fetched data to personalize the title
+        const title = `Target Macros for ${goalsData.weight.toFixed(1)} kg (${goalsData.goal})`;
+        card.querySelector('h4').innerHTML = `<i class="fas fa-chart-bar me-2"></i> ${title}`;
+
+        const targets = [
+            { label: 'Total Calories', value: goalsData.target_calories, unit: 'kcal', icon: 'fire', class: 'target-cal' },
+            { label: 'Protein', value: goalsData.target_protein, unit: 'g', icon: 'dumbbell', class: 'target-prot' },
+            { label: 'Carbs', value: goalsData.target_carbs, unit: 'g', icon: 'bread-slice', class: 'target-carb' },
+            { label: 'Fats', value: goalsData.target_fat, unit: 'g', icon: 'oil-can', class: 'target-fat' },
+        ];
+
+        let tableHtml = `<div class="row">`;
+        targets.forEach(t => {
+            const formattedValue = t.label === 'Total Calories' ? t.value.toLocaleString() : t.value.toFixed(0); 
+
+            tableHtml += `
+                <div class="col-lg-3 col-md-6 col-sm-6 mb-3">
+                    <div class="macro-target-box ${t.class}">
+                        <i class="fas fa-${t.icon} me-1"></i>
+                        <h6>${t.label}</h6>
+                        <p>${formattedValue} ${t.unit}</p>
+                    </div>
+                </div>
+            `;
+        });
+        tableHtml += `</div>`;
+        
+        outputDiv.innerHTML = tableHtml;
+    }
+
+
+    // --- ADVANCED FEATURE: SMART RECOMMENDATION LOGIC ---
     function filterFoods() {
         const nameFilter = document.getElementById('searchName').value.toLowerCase();
         const typeFilter = document.getElementById('filterType').value;
-        const weightGoal = document.getElementById('weightGoal').value; // 'lose', 'maintain', 'gain'
+        const weightGoal = document.getElementById('weightGoal').value; 
 
         document.querySelectorAll('.food-card').forEach(card => {
             const cardName = card.dataset.foodName.toLowerCase();
             const cardType = card.classList.contains('healthy') ? 'healthy' : 
-                                 card.classList.contains('junk') ? 'junk' : 
-                                 card.classList.contains('dairy') ? 'dairy' : 'frozen';
+                             card.classList.contains('junk') ? 'junk' : 
+                             card.classList.contains('dairy') ? 'dairy' : 'frozen';
             const calories = parseInt(card.dataset.calories);
-            const protein = parseInt(card.dataset.protein);
+            const protein = parseFloat(card.dataset.protein);
             let show = true;
+            let isRecommended = false;
 
-            // 1. Filtering Logic
+            // 1. Filtering Logic (Visibility)
             if (nameFilter && !cardName.includes(nameFilter)) show = false;
             if (typeFilter && cardType !== typeFilter) show = false;
 
-            // 2. Recommendation Logic (Highlighter)
+            // 2. Recommendation Logic (Smart Weighting)
             card.classList.remove('recommended');
-            let isRecommended = false;
 
-            // LOSE: Low calorie, Healthy focus, Moderate Protein (for muscle preservation)
-            if (weightGoal === 'lose' && calories <= 250 && cardType === 'healthy' && protein >= 5) {
-                isRecommended = true;
-            } 
-            // MAINTAIN: Balanced calorie (approx 200-400), non-junk
-            else if (weightGoal === 'maintain' && calories >= 150 && calories <= 400 && cardType !== 'junk') {
-                isRecommended = true;
-            } 
-            // GAIN: High calorie (min 300), High Protein (min 10g)
-            else if (weightGoal === 'gain' && calories >= 300 && protein >= 10) {
-                isRecommended = true;
+            // **NEW: Determine if the food is 'Junk' or 'High Calorie' (Calorie limit set to 500kcal for non-gain goals)**
+            const isJunk = cardType === 'junk';
+            const isHighCalorie = calories > 550; // A reasonable high-calorie limit for a single serving/item
+
+            // Only proceed with recommendation logic if the item is not junk
+            if (!isJunk) {
+                if (weightGoal === 'lose') {
+                    // Stricter for weight loss: Low Calorie, High Protein, must be Healthy or Dairy, NOT high calorie
+                    if (calories <= 200 && protein >= 5 && (cardType === 'healthy' || cardType === 'dairy')) {
+                        isRecommended = true;
+                    } 
+                } else if (weightGoal === 'maintain') {
+                    // Balanced: Moderate Calorie, Good Protein, must be a healthy source, NOT high calorie
+                    if (calories >= 150 && calories <= 350 && protein >= 5 && cardType !== 'junk') {
+                        isRecommended = true;
+                    }
+                } else if (weightGoal === 'gain') {
+                    // High Calorie/High Protein focus, but still *must* avoid junk for healthy gain
+                    if (calories <= 300 && protein >= 10) {
+                        isRecommended = true;
+                    }
+                }
+            }
+            
+            // **FINAL Check: If the item is marked as Recommended, apply the class.**
+            // This implicitly ensures that no 'junk' food ever gets the 'recommended' highlight.
+            if (isRecommended) {
+                 card.classList.add('recommended');
             }
 
-            if (isRecommended) card.classList.add('recommended');
 
             // 3. Apply Visibility
             card.style.display = show ? 'flex' : 'none';
@@ -383,16 +475,16 @@
 
         const plans = {
             lose: {
-                focus: 'Calorie Deficit & High Protein (Avg 350-450 kcal/meal)',
+                focus: 'Calorie Deficit & High Protein (Avg 50-350 kcal/meal)',
                 meals: [
-                    { meal: 'Breakfast 🍳', focus: 'High Fiber/Protein', cal: '250-300', example: 'Oatmeal (150kcal) with fruit, or 2 Eggs (140kcal) & Spinach (40kcal).' },
-                    { meal: 'Lunch 🥗', focus: 'Lean Protein & Veggies', cal: '350-450', example: 'Salad (150kcal) + Grilled Chicken (250kcal) or Dal (180kcal) + Brown Rice (100kcal portion).' },
+                    { meal: 'Breakfast 🍳', focus: 'High Fiber/Protein', cal: '250-300', example: 'Oatmeal (150kcal), 2 Eggs (140kcal) & Spinach (40kcal).' },
+                    { meal: 'Lunch 🥗', focus: 'Lean Protein & Veggies', cal: '350-450', example: 'Salad (150kcal) + Grilled Chicken (250kcal) or Dal (180kcal) + Brown Rice (small portion).' },
                     { meal: 'Dinner 🍽️', focus: 'Low Carb/Fat', cal: '300-400', example: 'Fish (200kcal) with steamed veggies, or Curd (100kcal) and Chapati (120kcal).' },
-                    { meal: 'Snack 🍎', focus: 'Hydration / Fiber', cal: '50-150', example: 'Apple (95kcal), Orange (62kcal), or Watermelon (46kcal).' }
+                    { meal: 'Snack 🍎', focus: 'Hydration / Fiber', cal: '50-150', example: 'Apple (95kcal) or Fresh Lemon Water (40kcal).' }
                 ]
             },
             maintain: {
-                focus: 'Balanced Macronutrients (Avg 500-600 kcal/meal)',
+                focus: 'Balanced Macronutrients (Avg 100-200 kcal/meal)',
                 meals: [
                     { meal: 'Breakfast 🥣', focus: 'Complex Carbs & Protein', cal: '450-550', example: 'Upma (200kcal) with Paneer (100kcal) and Tea (70kcal).' },
                     { meal: 'Lunch 🍛', focus: 'Full Balanced Meal', cal: '550-650', example: 'Brown Rice (215kcal) + Dal (180kcal) + Veggie (40kcal) + Curd (100kcal).' },
@@ -401,12 +493,12 @@
                 ]
             },
             gain: {
-                focus: 'Calorie Surplus & Max Protein (Avg 700+ kcal/meal)',
+                focus: 'Calorie Surplus & Max Protein (Avg 150-200 kcal/meal)',
                 meals: [
                     { meal: 'Breakfast 💪', focus: 'Max Calories & Protein', cal: '650-800', example: 'Poha (180kcal) + Eggs (140kcal) + Milkshake (380kcal) and Almonds (70kcal).' },
                     { meal: 'Lunch 🍝', focus: 'Dense Energy Source', cal: '750-900', example: 'Large Rice (400kcal) + Soybean (170kcal) + Chicken (165kcal) or Butter Paratha (220kcal).' },
                     { meal: 'Dinner 🍔', focus: 'High Protein Post-Workout', cal: '650-800', example: 'Paneer (265kcal), 2 Chapatis (240kcal), and a glass of Milk (150kcal).' },
-                    { meal: 'Snack 🥛', focus: 'Liquid Calories/Protein', cal: '250-400', example: 'Ice Cream (200kcal - moderate junk) or Peanut Butter sandwich (not listed) with Milk.' }
+                    { meal: 'Snack 🥛', focus: 'Liquid Calories/Protein', cal: '250-400', example: 'Peanut Butter sandwich (approx 300kcal) with Milk (150kcal) or a handful of Nuts (200kcal).' }
                 ]
             }
         };
